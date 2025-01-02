@@ -99,12 +99,73 @@ class MainWindow(QMainWindow):
         add_item.clicked.connect(self.add_new_item)
         save_button.clicked.connect(self.save_to_yaml)
         load_button.clicked.connect(self.load_from_yaml)
-        
+        # Add to MainWindow.__init__ after other shortcuts
+        move_right_action = edit_menu.addAction('Move Right')
+        move_right_action.setShortcut('Ctrl+Right')  # Command/Meta + Right arrow
+        move_right_action.triggered.connect(lambda: self.move_selected_items(1))
+
+        move_left_action = edit_menu.addAction('Move Left')
+        move_left_action.setShortcut('Ctrl+Left')  # Command/Meta + Left arrow
+        move_left_action.triggered.connect(lambda: self.move_selected_items(-1))  
+
+        move_up_action = edit_menu.addAction('Move Track Up')
+        move_up_action.setShortcut('Ctrl+Up')
+        move_up_action.triggered.connect(lambda: self.move_tracks(-1))
+
+        move_down_action = edit_menu.addAction('Move Track Down')
+        move_down_action.setShortcut('Ctrl+Down')
+        move_down_action.triggered.connect(lambda: self.move_tracks(1))
+
+        new_item_action = edit_menu.addAction('New Item')
+        new_item_action.setShortcut('Ctrl+T')
+        new_item_action.triggered.connect(self.add_new_item)
+
+        param_dialog_action = edit_menu.addAction('Show Parameters')
+        param_dialog_action.setShortcut('Ctrl+Return')
+        param_dialog_action.triggered.connect(lambda: self.show_param_dialog_for_selected())
+
         for btn in [zoom_in, zoom_out, add_item, save_button, load_button]:
             controls_layout.addWidget(btn)
             
         layout.addWidget(controls)
         self.setCentralWidget(central_widget)
+
+    def show_param_dialog_for_selected(self):
+        selected = self.scene.selectedItems()
+        if selected and isinstance(selected[0], MusicItem):
+            selected[0].showParamDialog()
+
+    def move_tracks(self, direction):
+        selected_items = self.scene.selectedItems()
+        
+        # Raggruppa gli item per track corrente
+        track_groups = {}
+        for item in selected_items:
+            if isinstance(item, MusicItem):
+                current_y = item.pos().y()
+                track_groups.setdefault(current_y, []).append(item)
+        
+        # Muovi ogni gruppo separatamente
+        for y_pos, items in track_groups.items():
+            current_track = int((y_pos - self.scene.grid_height) / self.scene.track_height)
+            new_track = max(0, min(current_track + direction, self.scene.num_tracks - 1))
+            new_y = self.scene.grid_height + (new_track * self.scene.track_height)
+            
+            for item in items:
+                item.track_index = new_track
+                item.setPos(item.pos().x(), new_y)
+
+
+
+    def move_selected_items(self, direction):
+        grid_size = (self.scene.pixels_per_beat * self.scene.zoom_level) / 16
+        delta = grid_size * direction
+            
+        for item in self.scene.selectedItems():
+            if isinstance(item, MusicItem):
+                new_x = item.pos().x() + delta
+                item.setPos(new_x, item.pos().y())
+                item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
 
     def modify_item_width(self, scale_factor):
         for item in self.scene.selectedItems():
@@ -151,6 +212,7 @@ class MainWindow(QMainWindow):
         
         self.scene.add_music_item(beats, track_number, 3, "New Clip")
 
+
     def save_to_yaml(self):
         if not self.current_file:
             file_path, _ = QFileDialog.getSaveFileName(self, "Save YAML", "", "YAML Files (*.yaml)")
@@ -161,35 +223,59 @@ class MainWindow(QMainWindow):
             items = []
             for item in self.scene.items():
                 if isinstance(item, MusicItem):
-                    params = item.params.copy()
-                    params['ritmo'] = list(params['ritmo'])
-                    params['ampiezza'] = list(params['ampiezza'])
-                    params['frequenza'] = list(params['frequenza'])
-                    items.append(params)
+                    items.append(item.params)
             
             with open(self.current_file, 'w') as f:
                 yaml.dump({"comportamenti": items}, f, default_flow_style=None, sort_keys=False, indent=1)
             self.update_window_title()
 
+
+    def save_to_yaml(self):
+        if not self.current_file:
+            file_path, _ = QFileDialog.getSaveFileName(self, "Save YAML", "", "YAML Files (*.yaml)")
+            if file_path:
+                self.current_file = file_path
+        
+        if self.current_file:
+            items = []
+            for item in self.scene.items():
+                if isinstance(item, MusicItem):
+                    params = {
+                        key: value[:] if isinstance(value, list) else value 
+                        for key, value in item.params.items()
+                    }
+                    items.append(params)
+            
+            with open(self.current_file, 'w') as f:
+                yaml.dump({"comportamenti": items}, f, default_flow_style=None, sort_keys=False, indent=1, allow_unicode=True)
+
+
     def load_from_yaml(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Open YAML", "", "YAML Files (*.yaml)")
         if file_path:
-            self.current_file = file_path  # Save the file path
+            self.current_file = file_path
             with open(file_path, 'r') as f:
                 data = yaml.safe_load(f)
                 
             self.scene.clear()
+            self.scene.num_tracks = len(data['comportamenti'])
+            self.scene.setSceneRect(0, -30, self.scene.sceneRect().width(), 
+                                self.scene.grid_height + (self.scene.num_tracks * self.scene.track_height))
+            
             self.scene.draw_timeline()
             self.scene.draw_tracks()
             
             for i, item_data in enumerate(data['comportamenti']):
-                item = self.scene.add_music_item(
-                    item_data['cAttacco'], 
-                    i % self.scene.num_tracks,
-                    item_data['durata']
-                )
+                x_pos = round(float(item_data['cAttacco']) * self.scene.pixels_per_beat * self.scene.zoom_level,2)
+                width = float(item_data['durata'][0] if isinstance(item_data['durata'], (list, tuple)) else item_data['durata'])
+                width *= round(self.scene.pixels_per_beat * self.scene.zoom_level,2)
+                
+                item = MusicItem(0, 0, width)
                 item.params = item_data
-            self.update_window_title()
+                item.setPos(x_pos, self.scene.grid_height + (i * self.scene.track_height))
+                self.scene.addItem(item)
+                
+            self.update_window_title()  
 
     def save_as_yaml(self):
         file_path, _ = QFileDialog.getSaveFileName(self, "Save YAML As", "", "YAML Files (*.yaml)")

@@ -20,6 +20,7 @@ class MusicItem(QGraphicsRectItem):
         self.text = QGraphicsTextItem(self.name, self)
         self.text.setPos(5, 10)
         self.drag_start = None
+        self.track_index = 0  # inizializza
         
         self.params = {
             "cAttacco": 0,
