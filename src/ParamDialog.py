@@ -47,3 +47,9 @@ class ParamDialog(QDialog):
         self.colorButton.setStyleSheet(
             f"background-color: {self.color.name()}; color: {'black' if self.color.lightness() > 128 else 'white'}"
         )
+
+    def keyPressEvent(self, event):
+        if (event.modifiers() & (Qt.ControlModifier | Qt.MetaModifier)) and event.key() == Qt.Key_W:
+            self.reject()
+        else:
+            super().keyPressEvent(event)

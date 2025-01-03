@@ -83,7 +83,7 @@ class TimelineView(QGraphicsView):
             
             for item in selected_items:
                 if isinstance(item, MusicItem):
-                    new_item = MusicItem(0, 0, item.rect().width(), item.name)
+                    new_item = MusicItem(0, 0, item.rect().width(), item.name, item.settings, item.rect().height())
                     new_item.params = item.params.copy()
                     new_pos = item.pos() + QPointF(item.rect().width(), 0)
                     new_item.setPos(new_pos)
@@ -96,3 +96,11 @@ class TimelineView(QGraphicsView):
                 item.setSelected(False)
             for item in new_items:
                 item.setSelected(True)
+
+        if event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
+            # Ottieni il riferimento alla MainWindow
+            main_window = self.window()
+            if hasattr(main_window, 'delete_selected_items'):
+                main_window.delete_selected_items()
+        else:
+            super().keyPressEvent(event)

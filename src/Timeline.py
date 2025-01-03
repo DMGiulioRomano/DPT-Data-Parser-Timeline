@@ -40,17 +40,28 @@ class Timeline(QGraphicsScene):
             text.setPos(-70, y + 15)
             self.addItem(text)
 
-    def add_music_item(self, seconds, track_number, duration=14, name="Clip"):
+    def add_music_item(self, seconds, track_number, duration=14, name="Clip", settings=None):
         if 0 <= track_number < self.num_tracks:
-            x = seconds * self.pixels_per_beat  # Convert seconds to pixels
+            x = seconds * self.pixels_per_beat * self.zoom_level  # Include zoom_level
             y = self.grid_height + (track_number * self.track_height)
-            width = duration * self.pixels_per_beat  # Convert duration to width
-            item = MusicItem(0, 0, width, name)
-            item.track_index = track_number  # Aggiungi questa linea
+            
+            # Convert duration to width considering zoom_level
+            if isinstance(duration, (list, tuple)):
+                width = float(duration[0]) * self.pixels_per_beat * self.zoom_level
+                duration_value = float(duration[0])
+            else:
+                width = float(duration) * self.pixels_per_beat * self.zoom_level
+                duration_value = float(duration)
+                
+            item = MusicItem(0, 0, width, name, settings, self.track_height)
+            item.track_index = track_number
             item.setPos(x, y)
+            item.params['cAttacco'] = seconds  # Qui impostiamo l'attacco in beats/seconds
+            item.params['durata'] = duration_value  # Imposta la durata
             self.addItem(item)
             return item
-   
+
+
     def scale_scene(self, factor):
         old_zoom = self.zoom_level
         self.zoom_level *= factor
@@ -92,26 +103,43 @@ class Timeline(QGraphicsScene):
         # Determina l'intervallo in base allo zoom
         if self.zoom_level < 0.2:
             interval = 30
+            subdivisions = 6  # Numero di stanghette intermedie
         elif self.zoom_level < 0.5:
             interval = 10
+            subdivisions = 5
         elif self.zoom_level < 1:
             interval = 5
+            subdivisions = 5
         elif self.zoom_level < 2:
             interval = 1
+            subdivisions = 4
         elif self.zoom_level < 4:
             interval = 0.5
+            subdivisions = 4
         else:
             interval = 0.1
+            subdivisions = 2
         
         # Disegna la griglia temporale
         current_time = 0
         x = 0
         while x < width:
+            # Disegna la stanghetta principale con il numero
             self.addLine(x, 0, x, self.grid_height, QPen(Qt.black, 2))
             text = QGraphicsTextItem(f"{current_time:.1f}")
             text.setDefaultTextColor(Qt.black)
             text.setPos(x - text.boundingRect().width()/2, -20)
             self.addItem(text)
+            
+            # Disegna le stanghette intermedie
+            sub_interval = interval / subdivisions
+            sub_spacing = grid_spacing * interval / subdivisions
+            for i in range(1, subdivisions):
+                sub_x = x + (i * sub_spacing)
+                if sub_x < width:
+                    # Stanghetta grigia più corta
+                    self.addLine(sub_x, self.grid_height/2, sub_x, self.grid_height, 
+                            QPen(QColor(150, 150, 150), 1))  # Grigio, più sottile
             
             current_time += interval
             x += interval * grid_spacing

@@ -7,9 +7,10 @@ from ParamDialog import ParamDialog
 
 
 class MusicItem(QGraphicsRectItem):
-    def __init__(self, x, y, width, name="Clip"):
+    def __init__(self, x, y, width, name="Clip", settings = None, track_height=40):
         width = float(width) if isinstance(width, (int, float)) else float(width[0])
-        super().__init__(x, y, width, 40)
+        super().__init__(x, y, width, track_height)
+        self.settings = settings  # Salva il riferimento alle settings
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)  # Abilita la selezione
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -18,7 +19,7 @@ class MusicItem(QGraphicsRectItem):
         self.setPen(QPen(Qt.black))
         self.name = name
         self.text = QGraphicsTextItem(self.name, self)
-        self.text.setPos(5, 10)
+        self.text.setPos(5, track_height/4)
         self.drag_start = None
         self.track_index = 0  # inizializza
         
@@ -31,7 +32,14 @@ class MusicItem(QGraphicsRectItem):
             "frequenza": [6,1],
             "posizione": -8
         }
-        
+
+    def updateTextStyle(self):
+        if self.settings:
+            font = self.text.font()
+            font.setPointSize(self.settings.get('text_size', 12))
+            self.text.setFont(font)
+            self.text.setDefaultTextColor(QColor(self.settings.get('text_color', '#000000')))
+
     def paint(self, painter, option, widget):
         super().paint(painter, option, widget)
         if self.isSelected():
@@ -47,10 +55,25 @@ class MusicItem(QGraphicsRectItem):
         dialog = ParamDialog(self.params, self.color)
         if dialog.exec_():
             for key, input_field in dialog.inputs.items():
-                if isinstance(self.params[key], list):
-                    self.params[key] = [float(x.strip()) for x in input_field.text().split(',')]
-                else:
-                    self.params[key] = float(input_field.text())
+                try:
+                    if isinstance(self.params[key], list):
+                        from ast import literal_eval
+                        value = literal_eval(input_field.text())
+                        
+                        # Funzione di conversione migliorata
+                        def convert_to_float(val):
+                            if isinstance(val, (list, tuple)):
+                                return [float(x) if isinstance(x, (int, float, str)) else convert_to_float(x) for x in val]
+                            return float(val)
+                        
+                        # Converti il valore mantenendo la struttura originale
+                        self.params[key] = convert_to_float(value)
+                    else:
+                        self.params[key] = float(input_field.text())
+                        
+                except (ValueError, SyntaxError) as e:
+                    print(f"Errore nel parsing del parametro {key}: {e}")
+                    continue
             
             self.color = dialog.color
             self.setBrush(self.color)
@@ -59,10 +82,9 @@ class MusicItem(QGraphicsRectItem):
                 new_x = self.params['cAttacco'] * self.scene().pixels_per_beat * self.scene().zoom_level
                 new_width = self.params['durata'] * self.scene().pixels_per_beat * self.scene().zoom_level
                 self.setPos(new_x, self.pos().y())
-                self.setRect(0, 0, new_width, 40)
-                self.text.setPos(5, 10)
-
-    
+                self.setRect(0, 0, new_width, self.rect().height())
+                self.text.setPos(5, self.rect().height()/4)
+                    
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange and self.scene():
             newPos = value
@@ -75,7 +97,7 @@ class MusicItem(QGraphicsRectItem):
             )) * self.scene().track_height)
             
             # Update cAttacco
-            self.params['cAttacco'] = grid_x / (self.scene().pixels_per_beat * self.scene().zoom_level)
+            self.params['cAttacco'] = round(grid_x / (self.scene().pixels_per_beat * self.scene().zoom_level),3)
             
             # Only move other items during direct drag, not during recursive updates
             if self.isSelected() and not hasattr(self, '_updating'):
@@ -125,13 +147,13 @@ class MusicItem(QGraphicsRectItem):
             )) * self.scene().track_height)
             
             self.setPos(new_x, track_y)
-            self.params['cAttacco'] = new_x / (self.scene().pixels_per_beat * self.scene().zoom_level)
+            self.params['cAttacco'] = round(new_x / (self.scene().pixels_per_beat * self.scene().zoom_level),3)
             
             if self.isSelected():
                 for item in self.scene().selectedItems():
                     if item != self and isinstance(item, MusicItem):
                         item.setPos(item.pos() + delta)
-                        item.params['cAttacco'] = item.pos().x() / (self.scene().pixels_per_beat * self.scene().zoom_level)
+                        item.params['cAttacco'] = round(item.pos().x() / (self.scene().pixels_per_beat * self.scene().zoom_level),3)
             
             self.drag_start = event.scenePos()
             
