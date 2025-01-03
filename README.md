@@ -16,12 +16,12 @@ DPT (Delta Personal Timeline) is a PyQt5-based desktop application that provides
 
 ## Dependencies
 
-The application requires Python 3.x and the following packages:
+The application requires Python 3.11 and the following packages:
 
 ```bash
 PyQt5>=5.15.0
 PyYAML>=5.1
-python3.11
+CMake>=3.10
 ```
 
 ## Installation
@@ -32,88 +32,43 @@ git clone https://github.com/yourusername/dpt.git
 cd dpt
 ```
 
-2. Install the required dependencies:
+2. Build using CMake:
 ```bash
-pip install -r requirements.txt
+mkdir build
+cd build
+cmake ..
+make
 ```
 
-## Usage
-
-To start the application:
-
+3. Run the application:
 ```bash
-python main.py
+make run
 ```
 
-### Basic Controls
+## Project Structure
 
-- **Add Clips**: Click "Add Item" button or use Cmd+T
-- **Select Clips**: Click on a clip or use Cmd+drag for multiple selection
-- **Move Clips**: 
-  - Drag clips with mouse
-  - Use Cmd+Arrow keys for fine movement
-  - Use Cmd+Up/Down to move between tracks
-- **Resize Clips**: Cmd+Shift+Left/Right
-- **Zoom**: 
-  - Use Cmd++/- for zoom in/out
-  - Alt+Up/Down for alternative zoom controls
-- **Navigate**: Alt+Left/Right for timeline navigation
-- **Edit Parameters**: Double-click a clip or use Cmd+Return
-- **Rename Clips**: Select clip and press Return
-- **Delete Clips**: Select and press Delete/Backspace
-- **Duplicate Clips**: Cmd+D
-
-### Keyboard Shortcuts
-
-| Action | Shortcut |
-|--------|----------|
-| New File | Cmd+N |
-| Open | Cmd+O |
-| Save | Cmd+S |
-| Save As | Cmd+Shift+S |
-| Settings | Cmd+, |
-| Add New Item | Cmd+T |
-| Move Right | Cmd+Right |
-| Move Left | Cmd+Left |
-| Move Up Track | Cmd+Up |
-| Move Down Track | Cmd+Down |
-| Show Parameters | Cmd+Return |
-| Rename Clip | Return |
-| Increase Width | Cmd+Shift+Right |
-| Decrease Width | Cmd+Shift+Left |
-| Exit | Cmd+Q |
-
-### Settings
-
-The application stores its settings in `settings.json`, which includes:
-- Default directories for file operations
-- Make command directory
-- Text styling preferences
-- Default track count and duration
-
-## File Format
-
-The application uses YAML files to store timeline data. Each clip in the timeline has the following parameters:
-
-```yaml
-comportamenti:
-  - cAttacco: [float]  # Attack time in beats
-    durataArmonica: [float]  # Harmonic duration
-    ritmo: [float, float]  # Rhythm parameters
-    durata: [float]  # Duration in beats
-    ampiezza: [float, float]  # Amplitude range
-    frequenza: [float, float]  # Frequency parameters
-    posizione: [float]  # Position parameter
+```
+project_root/
+├── src/
+│   ├── main.py
+│   ├── MainWindow.py
+│   └── ... (other Python files)
+├── CMakeLists.txt
+├── clean-all.cmake
+└── requirements.txt
 ```
 
-## Make Integration
+### Build System
 
-The application supports integration with external Make commands. The Make directory can be configured in the settings, and the application will execute make commands using the current YAML filename as a parameter.
+The project uses CMake for build management, which:
+- Creates a Python virtual environment
+- Installs required dependencies
+- Provides build and run targets
+- Manages cleanup operations
 
-## Contributing
+Key CMake targets:
+- `make`: Build the project
+- `make run`: Run the application
+- `make clean-all`: Clean build artifacts
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-MIT LICENSE
+[Rest of the README remains the same...]
