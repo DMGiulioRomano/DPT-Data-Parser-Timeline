@@ -5,7 +5,7 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QMainWindow, QVBoxLayout, QPushButton, QWidget, QHBoxLayout, 
-    QFileDialog
+    QFileDialog, QComboBox, QLineEdit, QLabel, QMessageBox
 )
 from Timeline import Timeline
 from TimelineView import TimelineView
@@ -82,6 +82,12 @@ class MainWindow(QMainWindow):
         decrease_width_action.setShortcut('Ctrl+Shift+Left')
         decrease_width_action.triggered.connect(lambda: self.modify_item_width(0.8))
 
+
+        
+        # Controls
+        controls = QWidget()
+        controls_layout = QHBoxLayout(controls)
+
         # Main widget setup
         central_widget = QWidget()
         layout = QVBoxLayout(central_widget)
@@ -94,6 +100,26 @@ class MainWindow(QMainWindow):
         self.view.setViewportMargins(70, 0, 0, 0)
         layout.addWidget(self.view)
         
+
+        # Search bar
+        search_widget = QWidget()
+        search_layout = QHBoxLayout(search_widget)
+        self.search_param = QComboBox()
+        self.search_param.addItems(['cAttacco', 'durataArmonica', 'ritmo', 'durata', 'ampiezza', 'frequenza', 'posizione'])
+        self.search_value = QLineEdit()
+        self.search_value.setPlaceholderText("Enter value to search...")
+        self.search_value.returnPressed.connect(self.perform_search)
+        clear_search_btn = QPushButton("Clear Search")
+        clear_search_btn.clicked.connect(self.clear_search)
+        
+        search_layout.addWidget(QLabel("Search Parameter:"))
+        search_layout.addWidget(self.search_param)
+        search_layout.addWidget(QLabel("Value:"))
+        search_layout.addWidget(self.search_value)
+        search_layout.addWidget(clear_search_btn)
+        layout.addWidget(search_widget)
+
+
         # Controls
         controls = QWidget()
         controls_layout = QHBoxLayout(controls)
@@ -341,7 +367,7 @@ class MainWindow(QMainWindow):
                 width = float(item_data['durata'][0] if isinstance(item_data['durata'], (list, tuple)) else item_data['durata'])
                 width *= round(self.scene.pixels_per_beat * self.scene.zoom_level,2)
                 
-                item = MusicItem(0, 0, width, "Clip", self.settings)
+                item = MusicItem(0, 0, width, "Clip", self.settings, self.scene.track_height)
                 item.params = item_data
                 item.setPos(x_pos, self.scene.grid_height + (i * self.scene.track_height))
                 self.scene.addItem(item)
@@ -408,3 +434,53 @@ class MainWindow(QMainWindow):
         for item in selected_items:
             if isinstance(item, MusicItem):
                 self.scene.removeItem(item)
+
+    def delete_selected_items(self):
+        selected_items = self.scene.selectedItems()
+        for item in selected_items:
+            if isinstance(item, MusicItem):
+                self.scene.removeItem(item)
+                
+    def perform_search(self):
+        param = self.search_param.currentText()
+        value = self.search_value.text()
+        
+        try:
+            # Gestisce diversi tipi di valori
+            if value.startswith('[') and value.endswith(']'):
+                # È una lista
+                search_value = eval(value)
+            else:
+                # È un numero singolo
+                search_value = float(value)
+                
+            # Resetta l'evidenziazione precedente
+            self.clear_search()
+            
+            # Cerca tutti gli item che corrispondono
+            for item in self.scene.items():
+                if isinstance(item, MusicItem):
+                    item_value = item.params.get(param)
+                    
+                    # Confronta i valori
+                    if isinstance(item_value, (list, tuple)) and isinstance(search_value, (list, tuple)):
+                        # Confronto tra liste
+                        if len(item_value) == len(search_value) and all(abs(a - b) < 0.001 for a, b in zip(item_value, search_value)):
+                            item.highlighted = True
+                    elif not isinstance(item_value, (list, tuple)) and not isinstance(search_value, (list, tuple)):
+                        # Confronto tra singoli valori
+                        if abs(item_value - search_value) < 0.001:
+                            item.highlighted = True
+            
+            # Aggiorna la vista
+            self.scene.update()
+            
+        except (ValueError, SyntaxError) as e:
+            QMessageBox.warning(self, "Search Error", f"Invalid search value: {str(e)}")
+            
+    def clear_search(self):
+        for item in self.scene.items():
+            if isinstance(item, MusicItem):
+                if hasattr(item, 'highlighted'):
+                    item.highlighted = False
+        self.scene.update()

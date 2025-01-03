@@ -41,12 +41,17 @@ class MusicItem(QGraphicsRectItem):
             self.text.setDefaultTextColor(QColor(self.settings.get('text_color', '#000000')))
 
     def paint(self, painter, option, widget):
-        super().paint(painter, option, widget)
-        if self.isSelected():
-            # Disegna l'evidenziazione della selezione
-            pen = QPen(Qt.blue, 2, Qt.DashLine)
-            painter.setPen(pen)
-            painter.drawRect(self.rect())
+            super().paint(painter, option, widget)
+            if hasattr(self, 'highlighted') and self.highlighted:
+                # Disegna l'evidenziazione della ricerca
+                pen = QPen(QColor(255, 165, 0), 3)  # Arancione per l'evidenziazione della ricerca
+                painter.setPen(pen)
+                painter.drawRect(self.rect())
+            elif self.isSelected():
+                # Disegna l'evidenziazione della selezione
+                pen = QPen(Qt.blue, 2, Qt.DashLine)
+                painter.setPen(pen)
+                painter.drawRect(self.rect())
 
     def mouseDoubleClickEvent(self, event):
         self.showParamDialog()

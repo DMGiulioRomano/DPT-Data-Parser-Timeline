@@ -1,0 +1,99 @@
+# File YAML: regole principali
+# - Indentazione: Usa spazi (non tab), mantenendo consistenza (di solito 2 spazi).
+# - Chiavi e valori: Formato `chiave: valore`. Stringhe con spazi vanno tra virgolette.
+# - Liste: Usa `-` seguito da uno posizione (es. `- elemento`).
+# - Dizionari annidati: Indenta per rappresentare gerarchie (es. chiave: sottochiave: valore).
+# - Commenti: Inizia con `#`.
+# - Booleani: Usa `true` o `false` (in minuscolo).
+# - Nullo: Usa `null`, `~` o lascia vuoto il valore.
+
+comportamenti:
+  - cAttacco: 0
+    durataArmonica: 35
+    ritmo: [3]
+    durata: 10
+    ampiezza: -14
+    frequenza: [2,5]
+    posizione: [-2,GEN06]
+  - cAttacco: 14
+    durataArmonica: 35
+    ritmo: [3,4]
+    durata: 11.8
+    ampiezza: -14
+    frequenza: [2,5]
+    posizione: [-5,GEN11]
+  - cAttacco: 17
+    durataArmonica: 30
+    ritmo: [3,2]
+    durata: 10.1
+    ampiezza: -16
+    frequenza: [[2,5],[2,5],+5]
+    posizione: -2
+# - 4
+  - cAttacco: 43
+    durataArmonica: 20
+    ritmo: [4,5]
+    durata: 7
+    ampiezza: -16
+    frequenza: [2,5]
+    posizione: 3
+  - cAttacco: 44
+    durataArmonica: 8
+    ritmo: [1]
+    durata: 9
+    ampiezza: -14
+    frequenza: [2,4]
+    posizione: 1
+# - 6
+  - cAttacco: 52
+    durataArmonica: 8
+    ritmo: [4,2]
+    durata: 4
+    ampiezza: -16
+    frequenza: [2,6]
+    posizione: 6
+# STOP
+  - cAttacco: 24
+    durataArmonica: 20
+    ritmo: [7,15,10,4]
+    durata: 22
+    ampiezza: -13
+    frequenza: [2,3]
+    posizione: 6
+# - 8
+  - cAttacco: 22
+    durataArmonica: 16
+    ritmo: [4,6]
+    durata: 17
+    ampiezza: -15
+    frequenza: [3,1]
+    posizione: 6
+  - cAttacco: 23
+    durataArmonica: 17
+    ritmo: [3,7,10]
+    durata: 10
+    ampiezza: -15
+    frequenza: [3,2]
+    posizione: 6
+# - 10
+  - cAttacco: 51
+    durataArmonica: 35
+    ritmo: [7,15,10,4]
+    durata: [35,3]
+    ampiezza: [-25,-0.25]
+    frequenza: [6,1]
+    posizione: -8
+  - cAttacco: 51
+    durataArmonica: 35
+    ritmo: [15,7,10,4]
+    durata: [35,3]
+    ampiezza: [-18,-0.75]
+    frequenza: [6,1]
+    posizione: -3
+  - cAttacco: 51
+    durataArmonica: 35
+    ritmo: [7,4,15,10]
+    durata: [35,3]
+    ampiezza: -20
+    frequenza: [6,1]
+    posizione: -2
