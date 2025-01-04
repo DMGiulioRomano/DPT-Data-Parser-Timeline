@@ -15,7 +15,8 @@ class Settings:
             'default_duration': 5,
             'default_track_count': 8,
             'text_color': '#000000',
-            'text_size': 12
+            'item_text_size': 12,
+            'timeline_text_size': 14,
         }
         self.current_settings = {}
         self.load_settings()

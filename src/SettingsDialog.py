@@ -92,14 +92,23 @@ class SettingsDialog(QDialog):
         self.color_button.clicked.connect(self.choose_color)
         layout.addLayout(color_layout)
 
-        # Text Size
-        size_layout = QHBoxLayout()
-        self.text_size_spin = QSpinBox()
-        self.text_size_spin.setRange(8, 72)
-        self.text_size_spin.setValue(self.settings.get('text_size', 12))
-        size_layout.addWidget(QLabel("Text Size:"))
-        size_layout.addWidget(self.text_size_spin)
-        layout.addLayout(size_layout)
+        # Timeline Text Size
+        timeline_size_layout = QHBoxLayout()
+        self.timeline_text_size_spin = QSpinBox()
+        self.timeline_text_size_spin.setRange(8, 72)
+        self.timeline_text_size_spin.setValue(self.settings.get('timeline_text_size', 14))
+        timeline_size_layout.addWidget(QLabel("Timeline Text Size:"))
+        timeline_size_layout.addWidget(self.timeline_text_size_spin)
+        layout.addLayout(timeline_size_layout)
+
+        # Item Text Size
+        item_size_layout = QHBoxLayout()
+        self.item_text_size_spin = QSpinBox()
+        self.item_text_size_spin.setRange(8, 72)
+        self.item_text_size_spin.setValue(self.settings.get('item_text_size', 12))
+        item_size_layout.addWidget(QLabel("Item Text Size:"))
+        item_size_layout.addWidget(self.item_text_size_spin)
+        layout.addLayout(item_size_layout)
 
         layout.addStretch()
 
@@ -138,5 +147,6 @@ class SettingsDialog(QDialog):
         self.settings.set('last_open_directory', self.open_dir_edit.text())
         self.settings.set('last_save_directory', self.save_dir_edit.text())
         self.settings.set('text_color', self.text_color.name())
-        self.settings.set('text_size', self.text_size_spin.value())
+        self.settings.set('item_text_size', self.item_text_size_spin.value())
+        self.settings.set('timeline_text_size', self.timeline_text_size_spin.value())
         super().accept()

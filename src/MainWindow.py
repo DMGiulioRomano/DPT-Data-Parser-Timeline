@@ -93,7 +93,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(central_widget)
         
         # Timeline view
-        self.scene = Timeline()
+        self.scene = Timeline(self.settings)
         self.view = TimelineView(self.scene)
         self.view.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
@@ -124,14 +124,14 @@ class MainWindow(QMainWindow):
         controls = QWidget()
         controls_layout = QHBoxLayout(controls)
         
-        zoom_in = QPushButton("Zoom In")
-        zoom_out = QPushButton("Zoom Out")
+        zoom_in = QPushButton("ZOOM IN")
+        zoom_out = QPushButton("ZOOM OUT")
         add_item = QPushButton("Add Item")
         save_button = QPushButton("Save")
         load_button = QPushButton("Load")
         
-        zoom_in.clicked.connect(lambda: self.scene.scale_scene(1.2))
-        zoom_out.clicked.connect(lambda: self.scene.scale_scene(0.8))
+        zoom_in.clicked.connect(lambda: self.scene.scale_scene(1.3))
+        zoom_out.clicked.connect(lambda: self.scene.scale_scene(0.7))
         add_item.clicked.connect(self.add_new_item)
         save_button.clicked.connect(self.save_to_yaml)
         load_button.clicked.connect(self.load_from_yaml)
@@ -221,8 +221,33 @@ class MainWindow(QMainWindow):
     def show_settings_dialog(self):
         dialog = SettingsDialog(self.settings, self)
         if dialog.exec_():
-            self.update_all_items_style()  # Aggiorna lo stile dopo che le impostazioni sono cambiat
+            # Salva gli item esistenti
+            stored_items = []
+            for item in self.scene.items():
+                if isinstance(item, MusicItem):
+                    stored_items.append({
+                        'params': item.params.copy(),
+                        'pos': item.pos(),
+                        'width': item.rect().width(),
+                        'color': item.color,
+                        'name': item.name,
+                        'settings': item.settings
+                    })
             
+            # Ridisegna la timeline
+            self.scene.draw_timeline()
+            
+            # Ripristina gli item
+            for item_data in stored_items:
+                item = MusicItem(0, 0, item_data['width'], item_data['name'], 
+                            item_data['settings'], self.scene.track_height)
+                item.params = item_data['params']
+                item.color = item_data['color']
+                item.setBrush(item_data['color'])
+                item.setPos(item_data['pos'])
+                self.scene.addItem(item)
+                item.updateTextStyle()
+                
     def show_param_dialog_for_selected(self):
         selected = self.scene.selectedItems()
         if selected and isinstance(selected[0], MusicItem):
@@ -411,7 +436,8 @@ class MainWindow(QMainWindow):
                 item.params = {k: (str(v) if isinstance(v, str) else v) for k, v in processed_data.items()}
                 item.setPos(x_pos, self.scene.grid_height + (i * self.scene.track_height))
                 self.scene.addItem(item)
-                
+                item.updateTextStyle()  # Aggiungi questa riga
+                 
             self.update_window_title()
 
 

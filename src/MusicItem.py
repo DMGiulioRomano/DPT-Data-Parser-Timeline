@@ -36,7 +36,7 @@ class MusicItem(QGraphicsRectItem):
     def updateTextStyle(self):
         if self.settings:
             font = self.text.font()
-            font.setPointSize(self.settings.get('text_size', 12))
+            font.setPointSize(self.settings.get('item_text_size', 12))
             self.text.setFont(font)
             self.text.setDefaultTextColor(QColor(self.settings.get('text_color', '#000000')))
 
