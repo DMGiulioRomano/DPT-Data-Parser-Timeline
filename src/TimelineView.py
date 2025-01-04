@@ -1,27 +1,64 @@
 import sys
 import yaml
+from PyQt5.QtWidgets import (QGraphicsView, QWidget, QVBoxLayout, 
+                           QHBoxLayout, QScrollBar)
 from PyQt5.QtCore import Qt, QTimer, QPointF
-from PyQt5.QtGui import QPainter
-from PyQt5.QtWidgets import (
-    QGraphicsView
-)
+from PyQt5.QtGui import QPainter, QBrush
+from TimelineRuler import TimelineRuler
 from MusicItem import MusicItem
-
+from Timeline import *
 class TimelineView(QGraphicsView):
     def __init__(self, scene):
+        # Creiamo il widget container principale
+        self.main_widget = QWidget()
+        self.main_layout = QVBoxLayout(self.main_widget)
+        self.main_layout.setSpacing(0)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Container per il ruler con il suo margine
+        ruler_container = QWidget()
+        ruler_layout = QHBoxLayout(ruler_container)
+        ruler_layout.setContentsMargins(70, 0, 0, 0)  # Aggiungiamo il margine qui
+        ruler_layout.setSpacing(0)
+        ruler_container.setContentsMargins(0, 0, 0, 0)  
+
+        # Timeline ruler
+        self.ruler_scene = TimelineRuler(scene.settings, scene)
+        self.ruler_view = QGraphicsView(self.ruler_scene)
+        self.ruler_view.setFixedHeight(70)
+        self.ruler_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ruler_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ruler_view.setBackgroundBrush(QBrush(Qt.white))
+
+        # Qui dobbiamo aggiungere il ruler alla ruler_layout (non al main_layout)
+        ruler_layout.addWidget(self.ruler_view) 
+
+        # Aggiungiamo il container del ruler al layout principale
+        self.main_layout.addWidget(ruler_container)
+    
+        # Main timeline view
         super().__init__(scene)
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.setViewportMargins(70, 0, 0, 0)  # Manteniamo il margine qui
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.setViewportMargins(70, 0, 0, 0)
         self.setRenderHint(QPainter.Antialiasing)
         self.setDragMode(QGraphicsView.RubberBandDrag)
-        self.rubberBandChanged.connect(self.handleRubberBandSelection)
-        self.viewport().setAttribute(Qt.WA_AcceptTouchEvents)
-        self.setRubberBandSelectionMode(Qt.IntersectsItemShape)  # Aggiunta questa riga
+        self.setRubberBandSelectionMode(Qt.IntersectsItemShape)
+        
+        # Scroll synchronization
+        self.horizontalScrollBar().valueChanged.connect(
+            self.ruler_view.horizontalScrollBar().setValue)
+            
+        # Add main view to layout
+        self.main_layout.addWidget(self)
         self.zoom_timer = QTimer()
         self.zoom_timer.setSingleShot(True)
         self.zoom_timer.setInterval(100)
         self.can_zoom = True
+
+    def get_widget(self):
+        return self.main_widget
+
 
     def mousePressEvent(self, event):
         if event.modifiers() & Qt.ControlModifier:
@@ -44,6 +81,7 @@ class TimelineView(QGraphicsView):
             if isinstance(item, MusicItem):
                 item.setSelected(True)
                             
+    # Override wheelEvent per gestire lo zoom su entrambe le viste
     def wheelEvent(self, event):
         if not self.can_zoom:
             return
@@ -56,6 +94,7 @@ class TimelineView(QGraphicsView):
         if hasattr(self, 'pinch_start') and self.pinch_start:
             factor = 1.1 if event.angleDelta().y() > 0 else 0.9
             self.scene().scale_scene(factor)
+            self.ruler_scene.update_zoom(self.scene().zoom_level)
             self.can_zoom = False
             self.zoom_timer.timeout.connect(self.enable_zoom)
             self.zoom_timer.start()
@@ -77,6 +116,11 @@ class TimelineView(QGraphicsView):
                 self.scene().scale_scene(1.2)
             elif event.key() == Qt.Key_Down:
                 self.scene().scale_scene(0.8)
+            elif event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
+                # Cancellazione diretta della traccia con Alt+Delete
+                main_window = self.window()
+                if hasattr(main_window, 'delete_selected_track'):
+                    main_window.delete_selected_track()
         elif (event.modifiers() & Qt.ControlModifier or event.modifiers() & Qt.MetaModifier) and event.key() == Qt.Key_D:
             selected_items = self.scene().selectedItems()
             new_items = []
@@ -96,10 +140,18 @@ class TimelineView(QGraphicsView):
                 item.setSelected(False)
             for item in new_items:
                 item.setSelected(True)
-
-        if event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
+        elif event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
             # Ottieni il riferimento alla MainWindow
             main_window = self.window()
+            
+            # Prima controlla se c'è una traccia selezionata
+            for item in self.scene().selectedItems():
+                if isinstance(item, TrackItem):
+                    if hasattr(main_window, 'delete_selected_track'):
+                        main_window.delete_selected_track()
+                    return
+            
+            # Se non ci sono tracce selezionate, procedi con la cancellazione degli item
             if hasattr(main_window, 'delete_selected_items'):
                 main_window.delete_selected_items()
         else:

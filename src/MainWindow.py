@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QVBoxLayout, QPushButton, QWidget, QHBoxLayout, 
     QFileDialog, QComboBox, QLineEdit, QLabel, QMessageBox
 )
-from Timeline import Timeline
+from Timeline import *
 from TimelineView import TimelineView
 from RenameDialog import RenameDialog
 from MusicItem import MusicItem
@@ -81,8 +81,10 @@ class MainWindow(QMainWindow):
         decrease_width_action = view_menu.addAction('Decrease Width')
         decrease_width_action.setShortcut('Ctrl+Shift+Left')
         decrease_width_action.triggered.connect(lambda: self.modify_item_width(0.8))
-
-
+        
+        delete_track_action = edit_menu.addAction('Delete Selected Track')
+        delete_track_action.setShortcut('Alt+Del')
+        delete_track_action.triggered.connect(self.delete_selected_track)
         
         # Controls
         controls = QWidget()
@@ -95,10 +97,10 @@ class MainWindow(QMainWindow):
         # Timeline view
         self.scene = Timeline(self.settings)
         self.view = TimelineView(self.scene)
+        layout.addWidget(self.view.get_widget())  # Usa il widget container
         self.view.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.view.setViewportMargins(70, 0, 0, 0)
-        layout.addWidget(self.view)
         
 
         # Search bar
@@ -170,6 +172,14 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
 
+    def delete_selected_track(self):
+        # Trova la traccia selezionata
+        selected_items = self.scene.selectedItems()
+        for item in selected_items:
+            if isinstance(item, TrackItem):
+                self.scene.delete_track(item.track_number)
+                break
+
     def sort_items_by_attack(self, items):
         """
         Ordina gli items in base al parametro cAttacco.
@@ -234,9 +244,10 @@ class MainWindow(QMainWindow):
                         'settings': item.settings
                     })
             
-            # Ridisegna la timeline
-            self.scene.draw_timeline()
-            
+            # Ridisegna la timeline con il nuovo colore delle tracce
+            self.scene.clear()
+            self.scene.draw_tracks()
+            self.view.ruler_scene.updateColor()
             # Ripristina gli item
             for item_data in stored_items:
                 item = MusicItem(0, 0, item_data['width'], item_data['name'], 
@@ -265,9 +276,9 @@ class MainWindow(QMainWindow):
         
         # Muovi ogni gruppo separatamente
         for y_pos, items in track_groups.items():
-            current_track = int((y_pos - self.scene.grid_height) / self.scene.track_height)
+            current_track = int((y_pos) / self.scene.track_height)
             new_track = max(0, min(current_track + direction, self.scene.num_tracks - 1))
-            new_y = self.scene.grid_height + (new_track * self.scene.track_height)
+            new_y = (new_track * self.scene.track_height)
             
             for item in items:
                 item.track_index = new_track
@@ -406,9 +417,8 @@ class MainWindow(QMainWindow):
             self.scene.clear()
             self.scene.num_tracks = len(data['comportamenti'])
             self.scene.setSceneRect(0, -30, self.scene.sceneRect().width(), 
-                                self.scene.grid_height + (self.scene.num_tracks * self.scene.track_height))
+                                (self.scene.num_tracks * self.scene.track_height))
             
-            self.scene.draw_timeline()
             self.scene.draw_tracks()
             
             for i, item_data in enumerate(data['comportamenti']):
@@ -434,9 +444,9 @@ class MainWindow(QMainWindow):
                 item = MusicItem(0, 0, width, "Clip", self.settings, self.scene.track_height)
                 # Quando assegniamo i params, memorizziamo i valori stringa come sono
                 item.params = {k: (str(v) if isinstance(v, str) else v) for k, v in processed_data.items()}
-                item.setPos(x_pos, self.scene.grid_height + (i * self.scene.track_height))
+                item.setPos(x_pos,(i * self.scene.track_height))
                 self.scene.addItem(item)
-                item.updateTextStyle()  # Aggiungi questa riga
+                item.updateTextStyle() 
                  
             self.update_window_title()
 
@@ -495,12 +505,6 @@ class MainWindow(QMainWindow):
         for item in self.scene.items():
             if isinstance(item, MusicItem):
                 item.updateTextStyle()
-
-    def delete_selected_items(self):
-        selected_items = self.scene.selectedItems()
-        for item in selected_items:
-            if isinstance(item, MusicItem):
-                self.scene.removeItem(item)
 
     def delete_selected_items(self):
         selected_items = self.scene.selectedItems()

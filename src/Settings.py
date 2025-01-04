@@ -17,6 +17,8 @@ class Settings:
             'text_color': '#000000',
             'item_text_size': 12,
             'timeline_text_size': 14,
+            'timeline_background_color': '#F0F0F0',  
+            'track_background_color': '#F0F0F0'  
         }
         self.current_settings = {}
         self.load_settings()

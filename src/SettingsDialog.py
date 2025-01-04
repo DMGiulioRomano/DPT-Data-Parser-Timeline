@@ -110,7 +110,58 @@ class SettingsDialog(QDialog):
         item_size_layout.addWidget(self.item_text_size_spin)
         layout.addLayout(item_size_layout)
 
+
+        # Timeline Background Color
+        timeline_color_layout = QHBoxLayout()
+        self.timeline_color = QColor(self.settings.get('timeline_background_color', '#F0F0F0'))
+        self.timeline_color_button = QPushButton()
+        self.update_timeline_color_button()
+        timeline_color_layout.addWidget(QLabel("Timeline Background Color:"))
+        timeline_color_layout.addWidget(self.timeline_color_button)
+        self.timeline_color_button.clicked.connect(self.choose_timeline_color)
+        layout.addLayout(timeline_color_layout)
+
+
+        # Track Background Color
+        track_color_layout = QHBoxLayout()
+        self.track_color = QColor(self.settings.get('track_background_color', '#F0F0F0'))
+        self.track_color_button = QPushButton()
+        self.update_track_color_button()
+        track_color_layout.addWidget(QLabel("Track Background Color:"))
+        track_color_layout.addWidget(self.track_color_button)
+        self.track_color_button.clicked.connect(self.choose_track_color)
+        layout.addLayout(track_color_layout)
+
         layout.addStretch()
+
+    def choose_track_color(self):
+        color = QColorDialog.getColor(self.track_color, self)
+        if color.isValid():
+            self.track_color = color
+            self.update_track_color_button()
+
+    def update_track_color_button(self):
+        self.track_color_button.setStyleSheet(
+            f"background-color: {self.track_color.name()}; "
+            f"color: {'black' if self.track_color.lightness() > 128 else 'white'}; "
+            f"min-width: 60px; min-height: 30px;"
+        )
+        self.track_color_button.setText(self.track_color.name())
+
+    def choose_timeline_color(self):
+        color = QColorDialog.getColor(self.timeline_color, self)
+        if color.isValid():
+            self.timeline_color = color
+            self.update_timeline_color_button()
+
+    def update_timeline_color_button(self):
+        self.timeline_color_button.setStyleSheet(
+            f"background-color: {self.timeline_color.name()}; "
+            f"color: {'black' if self.timeline_color.lightness() > 128 else 'white'}; "
+            f"min-width: 60px; min-height: 30px;"
+        )
+        self.timeline_color_button.setText(self.timeline_color.name())
+
 
     def update_color_button(self):
         self.color_button.setStyleSheet(
@@ -149,4 +200,6 @@ class SettingsDialog(QDialog):
         self.settings.set('text_color', self.text_color.name())
         self.settings.set('item_text_size', self.item_text_size_spin.value())
         self.settings.set('timeline_text_size', self.timeline_text_size_spin.value())
+        self.settings.set('track_background_color', self.track_color.name())
+        self.settings.set('timeline_background_color', self.timeline_color.name())
         super().accept()

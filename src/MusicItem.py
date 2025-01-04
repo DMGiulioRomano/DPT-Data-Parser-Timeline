@@ -156,7 +156,7 @@ class MusicItem(QGraphicsRectItem):
             grid_size = (self.scene().pixels_per_beat * self.scene().zoom_level) / 16
             grid_x = max(0,round(newPos.x() / grid_size) * grid_size)
             
-            track_y = self.scene().grid_height + (max(0, min(
+            track_y = (max(0, min(
                 round((newPos.y() - self.scene().grid_height) / self.scene().track_height),
                 self.scene().num_tracks - 1
             )) * self.scene().track_height)

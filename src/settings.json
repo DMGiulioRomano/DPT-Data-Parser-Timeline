@@ -6,5 +6,7 @@
     "make_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/delta",
     "text_color": "#000000",
     "item_text_size": 11,
-    "timeline_text_size": 15
+    "timeline_text_size": 15,
+    "track_background_color": "#59c0bc",
+    "timeline_background_color": "#100b18"
 }
