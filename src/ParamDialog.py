@@ -11,16 +11,25 @@ from PyQt5.QtWidgets import (
 )
 
 class ParamDialog(QDialog):
-    def __init__(self, params,color=None, parent=None):
+    def __init__(self, params, color=None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Edit Parameters")
-        self.color = color or QColor(100, 150, 200)  # Default color        
+        self.color = color or QColor(100, 150, 200)
         layout = QFormLayout()
         self.inputs = {}
         
         for key, value in params.items():
             if isinstance(value, list):
-                self.inputs[key] = QLineEdit(str(value)[1:-1])
+                # Per le liste, formatta ogni elemento
+                formatted_list = []
+                for item in value:
+                    if isinstance(item, str):
+                        # Se è una stringa, non aggiungere apici
+                        formatted_list.append(str(item))
+                    else:
+                        formatted_list.append(str(item))
+                # Unisci gli elementi con virgole e metti tra parentesi quadre
+                self.inputs[key] = QLineEdit('[' + ', '.join(formatted_list) + ']')
             else:
                 self.inputs[key] = QLineEdit(str(value))
             layout.addRow(key, self.inputs[key])

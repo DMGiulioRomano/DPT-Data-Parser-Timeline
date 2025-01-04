@@ -170,6 +170,17 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
 
+    def sort_items_by_attack(self, items):
+        """
+        Ordina gli items in base al parametro cAttacco.
+        Args:
+            items: lista di dizionari dei parametri degli items
+        Returns:
+            Lista ordinata di items
+        """
+        return sorted(items, key=lambda x: float(x['cAttacco']))
+
+
     def run_make_command(self):
         try:
             make_dir = self.settings.get('make_directory')
@@ -240,15 +251,17 @@ class MainWindow(QMainWindow):
 
 
     def move_selected_items(self, direction):
-        grid_size = (self.scene.pixels_per_beat * self.scene.zoom_level) / 16
+    # Base grid size inversely proportional to zoom with minimum
+        min_grid_size = self.scene.pixels_per_beat / 32  # Minimum movement
+        grid_size = max(min_grid_size, (self.scene.pixels_per_beat / 16) / self.scene.zoom_level)
         delta = grid_size * direction
-            
+        
         for item in self.scene.selectedItems():
             if isinstance(item, MusicItem):
-                new_x = item.pos().x() + delta
+                new_x = max(0,item.pos().x() + delta)
                 item.setPos(new_x, item.pos().y())
                 item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
-
+            
     def modify_item_width(self, scale_factor):
         for item in self.scene.selectedItems():
             if isinstance(item, MusicItem):
@@ -295,18 +308,17 @@ class MainWindow(QMainWindow):
         self.scene.add_music_item(beats, track_number, 3, "New Clip", self.settings)
 
 
+
     def save_to_yaml(self):
         if not self.current_file:
-            # Ottieni il percorso come stringa dal settings
             last_dir = self.settings.get('last_save_directory')
             if not os.path.exists(last_dir):
                 last_dir = self.settings.get('last_open_directory')
             
-            # Verifica che il percorso esista
             if os.path.exists(last_dir):
-                initial_dir = os.path.join(last_dir, '')  # Aggiungi separatore alla fine
+                initial_dir = os.path.join(last_dir, '')
             else:
-                initial_dir = ""  # fallback alla directory corrente
+                initial_dir = ""
 
             file_path, _ = QFileDialog.getSaveFileName(
                 self, 
@@ -316,7 +328,6 @@ class MainWindow(QMainWindow):
             )
             if file_path:
                 self.current_file = file_path
-                # Aggiorna il last_save_directory con il nuovo percorso
                 self.settings.set('last_save_directory', str(Path(file_path).parent))
         
         if self.current_file:
@@ -329,24 +340,37 @@ class MainWindow(QMainWindow):
                     }
                     items.append(params)
             
+            sorted_items = self.sort_items_by_attack(items)
+            
+            class CustomDumper(yaml.SafeDumper):
+                def represent_sequence(self, tag, sequence, flow_style=None):
+                    if len(sequence) > 0 and isinstance(sequence[0], list):
+                        flow_style = True
+                    return super().represent_sequence(tag, sequence, flow_style)
+            
             try:
                 with open(self.current_file, 'w') as f:
-                    yaml.dump({"comportamenti": items}, f, default_flow_style=None, sort_keys=False, indent=1, allow_unicode=True)
+                    yaml.dump({"comportamenti": sorted_items}, f, 
+                            Dumper=CustomDumper, 
+                            default_flow_style=None, 
+                            sort_keys=False, 
+                            indent=1, 
+                            allow_unicode=True)
                 self.update_window_title()
             except Exception as e:
                 print(f"Errore nel salvataggio del file: {e}")
+
 
 
     def load_from_yaml(self):
         last_dir = self.settings.get('last_open_directory')
 
         if os.path.exists(last_dir):
-            initial_dir = os.path.join(last_dir, '')  # Aggiungi separatore alla fine
+            initial_dir = os.path.join(last_dir, '')
         else:
-            initial_dir = ""  # fallback alla directory corrente
+            initial_dir = ""
 
         file_path, _ = QFileDialog.getOpenFileName(self, "Open YAML", initial_dir, "YAML Files (*.yaml)")
-
 
         if file_path:
             self.settings.set('last_open_directory', str(Path(file_path).parent))
@@ -363,16 +387,33 @@ class MainWindow(QMainWindow):
             self.scene.draw_tracks()
             
             for i, item_data in enumerate(data['comportamenti']):
-                x_pos = round(float(item_data['cAttacco']) * self.scene.pixels_per_beat * self.scene.zoom_level,2)
-                width = float(item_data['durata'][0] if isinstance(item_data['durata'], (list, tuple)) else item_data['durata'])
+                # Converti i valori stringa in valori raw
+                processed_data = {}
+                for key, value in item_data.items():
+                    if isinstance(value, list):
+                        processed_value = []
+                        for item in value:
+                            # Se è una stringa, la lasciamo come raw string (senza apici)
+                            if isinstance(item, str):
+                                processed_value.append(str(item))
+                            else:
+                                processed_value.append(item)
+                        processed_data[key] = processed_value
+                    else:
+                        processed_data[key] = value
+
+                x_pos = round(float(processed_data['cAttacco']) * self.scene.pixels_per_beat * self.scene.zoom_level,2)
+                width = float(processed_data['durata'][0] if isinstance(processed_data['durata'], (list, tuple)) else processed_data['durata'])
                 width *= round(self.scene.pixels_per_beat * self.scene.zoom_level,2)
                 
                 item = MusicItem(0, 0, width, "Clip", self.settings, self.scene.track_height)
-                item.params = item_data
+                # Quando assegniamo i params, memorizziamo i valori stringa come sono
+                item.params = {k: (str(v) if isinstance(v, str) else v) for k, v in processed_data.items()}
                 item.setPos(x_pos, self.scene.grid_height + (i * self.scene.track_height))
                 self.scene.addItem(item)
                 
-            self.update_window_title()  
+            self.update_window_title()
+
 
     def save_as_yaml(self):
         # Ottieni il percorso come stringa dal settings

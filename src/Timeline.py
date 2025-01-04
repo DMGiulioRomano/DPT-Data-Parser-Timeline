@@ -67,7 +67,7 @@ class Timeline(QGraphicsScene):
         self.zoom_level *= factor
         new_width = max(self.min_width * self.zoom_level, self.sceneRect().width())
         
-        # Store item data before clearing
+        # Store item data and selection state before clearing
         stored_items = []
         for item in self.items():
             if isinstance(item, MusicItem):
@@ -76,7 +76,10 @@ class Timeline(QGraphicsScene):
                     'x': item.pos().x() * factor,
                     'y': item.pos().y(),
                     'width': item.rect().width() * factor,
-                    'color': item.color  # Aggiungi il colore
+                    'color': item.color,
+                    'selected': item.isSelected(),  # Store selection state
+                    'name': item.name,  # Store the name
+                    'settings': item.settings  # Store the settings reference
                 })
         
         self.clear()
@@ -84,14 +87,16 @@ class Timeline(QGraphicsScene):
         self.draw_timeline()
         self.draw_tracks()
         
-        # Recreate items with new positions and sizes
+        # Recreate items with preserved properties
         for item_data in stored_items:
-            item = MusicItem(0, 0, item_data['width'])
+            item = MusicItem(0, 0, item_data['width'], item_data['name'], item_data['settings'], self.track_height)  # Pass stored settings
             item.params = item_data['params']
-            item.color = item_data['color']  # Ripristina il colore
+            item.color = item_data['color']
             item.setBrush(item_data['color'])
             item.setPos(item_data['x'], item_data['y'])
             self.addItem(item)
+            item.setSelected(item_data['selected'])  # Restore selection state
+
 
     def draw_timeline(self):
         self.clear()

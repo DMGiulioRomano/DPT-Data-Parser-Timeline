@@ -20,7 +20,7 @@ class TimelineView(QGraphicsView):
         self.setRubberBandSelectionMode(Qt.IntersectsItemShape)  # Aggiunta questa riga
         self.zoom_timer = QTimer()
         self.zoom_timer.setSingleShot(True)
-        self.zoom_timer.setInterval(50)
+        self.zoom_timer.setInterval(100)
         self.can_zoom = True
 
     def mousePressEvent(self, event):
@@ -54,7 +54,7 @@ class TimelineView(QGraphicsView):
             self.pinch_start = False
             
         if hasattr(self, 'pinch_start') and self.pinch_start:
-            factor = 1.2 if event.angleDelta().y() > 0 else 0.8
+            factor = 1.1 if event.angleDelta().y() > 0 else 0.9
             self.scene().scale_scene(factor)
             self.can_zoom = False
             self.zoom_timer.timeout.connect(self.enable_zoom)
