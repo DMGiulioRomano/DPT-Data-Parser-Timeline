@@ -62,12 +62,17 @@ class MainWindow(QMainWindow):
         
         zoom_in_action = view_menu.addAction('Zoom &In')
         zoom_in_action.setShortcut('Ctrl++')
-        zoom_in_action.triggered.connect(lambda: self.scene.scale_scene(1.2))
-        
+        zoom_in_action.triggered.connect(lambda: (
+            self.scene.scale_scene(1.2),
+            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+        ))
+
         zoom_out_action = view_menu.addAction('Zoom &Out')
         zoom_out_action.setShortcut('Ctrl+-')
-        zoom_out_action.triggered.connect(lambda: self.scene.scale_scene(0.8))
-        
+        zoom_out_action.triggered.connect(lambda: (
+            self.scene.scale_scene(0.8),
+            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+        ))               
         settings_menu = menubar.addMenu('&Settings')
         settings_action = settings_menu.addAction('&Preferences')
         settings_action.setShortcut('Ctrl+,')
@@ -85,7 +90,10 @@ class MainWindow(QMainWindow):
         delete_track_action = edit_menu.addAction('Delete Selected Track')
         delete_track_action.setShortcut('Alt+Del')
         delete_track_action.triggered.connect(self.delete_selected_track)
-        
+
+        new_track_action = edit_menu.addAction('New Track')
+        new_track_action.setShortcut('Ctrl+2')  # In macOS questo diventerà automaticamente Cmd+2
+        new_track_action.triggered.connect(self.add_new_track)        
         # Controls
         controls = QWidget()
         controls_layout = QHBoxLayout(controls)
@@ -125,15 +133,22 @@ class MainWindow(QMainWindow):
         # Controls
         controls = QWidget()
         controls_layout = QHBoxLayout(controls)
-        
+                
         zoom_in = QPushButton("ZOOM IN")
         zoom_out = QPushButton("ZOOM OUT")
+        # ...
+        zoom_in.clicked.connect(lambda: (
+            self.scene.scale_scene(1.3),
+            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+        ))
+        zoom_out.clicked.connect(lambda: (
+            self.scene.scale_scene(0.7),
+            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+        ))
         add_item = QPushButton("Add Item")
         save_button = QPushButton("Save")
         load_button = QPushButton("Load")
         
-        zoom_in.clicked.connect(lambda: self.scene.scale_scene(1.3))
-        zoom_out.clicked.connect(lambda: self.scene.scale_scene(0.7))
         add_item.clicked.connect(self.add_new_item)
         save_button.clicked.connect(self.save_to_yaml)
         load_button.clicked.connect(self.load_from_yaml)
@@ -171,7 +186,44 @@ class MainWindow(QMainWindow):
         layout.addWidget(controls)
         self.setCentralWidget(central_widget)
 
-
+    def add_new_track(self):
+        # Incrementa il numero di tracce
+        self.scene.num_tracks += 1
+        
+        # Ricalcola l'altezza necessaria
+        required_height = self.scene.num_tracks * self.scene.track_height
+        current_height = max(required_height, self.scene.min_height)
+        
+        # Aggiorna le dimensioni della scena
+        self.scene.setSceneRect(0, 0, self.scene.sceneRect().width(), current_height)
+        
+        # Ridisegna tutte le tracce
+        self.scene.clear()
+        self.scene.draw_tracks()
+        
+        # Ripristina gli item esistenti
+        stored_items = []
+        for item in self.scene.items():
+            if isinstance(item, MusicItem):
+                stored_items.append({
+                    'params': item.params.copy(),
+                    'pos': item.pos(),
+                    'width': item.rect().width(),
+                    'color': item.color,
+                    'name': item.name,
+                    'settings': item.settings
+                })
+        
+        # Ridisegna gli item esistenti
+        for item_data in stored_items:
+            item = MusicItem(0, 0, item_data['width'], item_data['name'], 
+                        item_data['settings'], self.scene.track_height)
+            item.params = item_data['params']
+            item.color = item_data['color']
+            item.setBrush(item_data['color'])
+            item.setPos(item_data['pos'])
+            self.scene.addItem(item)
+            
     def delete_selected_track(self):
         # Trova la traccia selezionata
         selected_items = self.scene.selectedItems()

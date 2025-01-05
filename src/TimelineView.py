@@ -1,7 +1,7 @@
 import sys
 import yaml
 from PyQt5.QtWidgets import (QGraphicsView, QWidget, QVBoxLayout, 
-                           QHBoxLayout, QScrollBar)
+                           QHBoxLayout, QScrollBar, QSizePolicy)
 from PyQt5.QtCore import Qt, QTimer, QPointF
 from PyQt5.QtGui import QPainter, QBrush
 from TimelineRuler import TimelineRuler
@@ -17,6 +17,7 @@ class TimelineView(QGraphicsView):
 
         # Container per il ruler con il suo margine
         ruler_container = QWidget()
+        ruler_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         ruler_layout = QHBoxLayout(ruler_container)
         ruler_layout.setContentsMargins(70, 0, 0, 0)  # Aggiungiamo il margine qui
         ruler_layout.setSpacing(0)
@@ -28,11 +29,12 @@ class TimelineView(QGraphicsView):
         self.ruler_view.setFixedHeight(70)
         self.ruler_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.ruler_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # Qui dobbiamo aggiungere il ruler alla ruler_layout (non al main_layout)
+        self.ruler_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         ruler_layout.addWidget(self.ruler_view) 
 
         # Aggiungiamo il container del ruler al layout principale
         self.main_layout.addWidget(ruler_container)
+        self.main_layout.setSpacing(0)  # Importante: elimina lo spazio tra i widget
     
         # Main timeline view
         super().__init__(scene)
@@ -53,6 +55,8 @@ class TimelineView(QGraphicsView):
         self.zoom_timer.setSingleShot(True)
         self.zoom_timer.setInterval(100)
         self.can_zoom = True
+        # Ensure vertical scrollbar starts at top
+        QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
 
     def get_widget(self):
         return self.main_widget
@@ -102,6 +106,7 @@ class TimelineView(QGraphicsView):
     def enable_zoom(self):
         self.can_zoom = True
 
+
     def keyPressEvent(self, event):
         if event.modifiers() & Qt.AltModifier:
             if event.key() == Qt.Key_Left:
@@ -112,13 +117,17 @@ class TimelineView(QGraphicsView):
                     self.horizontalScrollBar().value() + 100)
             elif event.key() == Qt.Key_Up:
                 self.scene().scale_scene(1.2)
+                self.ruler_scene.update_zoom(self.scene().zoom_level)
             elif event.key() == Qt.Key_Down:
                 self.scene().scale_scene(0.8)
+                self.ruler_scene.update_zoom(self.scene().zoom_level)
             elif event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
                 # Cancellazione diretta della traccia con Alt+Delete
                 main_window = self.window()
                 if hasattr(main_window, 'delete_selected_track'):
                     main_window.delete_selected_track()
+            event.accept()
+            return
         elif (event.modifiers() & Qt.ControlModifier or event.modifiers() & Qt.MetaModifier) and event.key() == Qt.Key_D:
             selected_items = self.scene().selectedItems()
             new_items = []

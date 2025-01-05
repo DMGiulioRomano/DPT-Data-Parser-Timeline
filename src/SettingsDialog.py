@@ -28,8 +28,13 @@ class SettingsDialog(QDialog):
         # Tab per lo stile del testo
         text_style_tab = QWidget()
         self.setup_text_style_tab(text_style_tab)
-        tab_widget.addTab(text_style_tab, "Text Style")
-        
+        tab_widget.addTab(text_style_tab, "Text Style")        
+
+        # Tab per le impostazioni generali
+        general_tab = QWidget()
+        self.setup_general_tab(general_tab)
+        tab_widget.addTab(general_tab, "General")
+
         layout.addWidget(tab_widget)
 
         # Pulsanti OK/Cancel
@@ -41,6 +46,22 @@ class SettingsDialog(QDialog):
         buttons.addWidget(ok_button)
         buttons.addWidget(cancel_button)
         layout.addLayout(buttons)
+
+    def setup_general_tab(self, tab):
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(20)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Numero di tracce di default
+        tracks_layout = QHBoxLayout()
+        self.default_tracks_spin = QSpinBox()
+        self.default_tracks_spin.setRange(1, 50)  # Permettiamo da 1 a 50 tracce
+        self.default_tracks_spin.setValue(self.settings.get('default_track_count', 8))
+        tracks_layout.addWidget(QLabel("Default Number of Tracks:"))
+        tracks_layout.addWidget(self.default_tracks_spin)
+        layout.addLayout(tracks_layout)
+        
+        layout.addStretch()
 
     def setup_directories_tab(self, tab):
         layout = QVBoxLayout(tab)
@@ -86,6 +107,7 @@ class SettingsDialog(QDialog):
         color_layout = QHBoxLayout()
         self.text_color = QColor(self.settings.get('text_color', '#000000'))
         self.color_button = QPushButton()
+        self.color_button.setFocusPolicy(Qt.NoFocus)  # Aggiungiamo questa riga
         self.update_color_button()
         color_layout.addWidget(QLabel("Text Color:"))
         color_layout.addWidget(self.color_button)
@@ -115,6 +137,7 @@ class SettingsDialog(QDialog):
         timeline_color_layout = QHBoxLayout()
         self.timeline_color = QColor(self.settings.get('timeline_background_color', '#F0F0F0'))
         self.timeline_color_button = QPushButton()
+        self.timeline_color_button.setFocusPolicy(Qt.NoFocus)  # Aggiungiamo questa riga
         self.update_timeline_color_button()
         timeline_color_layout.addWidget(QLabel("Timeline Background Color:"))
         timeline_color_layout.addWidget(self.timeline_color_button)
@@ -126,6 +149,7 @@ class SettingsDialog(QDialog):
         track_color_layout = QHBoxLayout()
         self.track_color = QColor(self.settings.get('track_background_color', '#F0F0F0'))
         self.track_color_button = QPushButton()
+        self.track_color_button.setFocusPolicy(Qt.NoFocus)  # Aggiungiamo questa riga
         self.update_track_color_button()
         track_color_layout.addWidget(QLabel("Track Background Color:"))
         track_color_layout.addWidget(self.track_color_button)
@@ -180,6 +204,8 @@ class SettingsDialog(QDialog):
     def keyPressEvent(self, event):
         if (event.modifiers() & (Qt.ControlModifier | Qt.MetaModifier)) and event.key() == Qt.Key_W:
             self.reject()
+        elif event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:  # Aggiungiamo questo elif
+            self.accept()
         else:
             super().keyPressEvent(event)
 
@@ -202,4 +228,5 @@ class SettingsDialog(QDialog):
         self.settings.set('timeline_text_size', self.timeline_text_size_spin.value())
         self.settings.set('track_background_color', self.track_color.name())
         self.settings.set('timeline_background_color', self.timeline_color.name())
+        self.settings.set('default_track_count', self.default_tracks_spin.value())
         super().accept()

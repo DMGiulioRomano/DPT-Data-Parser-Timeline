@@ -20,7 +20,7 @@ class Timeline(QGraphicsScene):
         self.min_grid_spacing = 20
         self.grid_height = 40
         self.track_height = 50
-        self.num_tracks = 8
+        self.num_tracks = self.settings.get('default_track_count', 8)
         self.setBackgroundBrush(QBrush(QColor(220, 220, 220)))
         self.draw_tracks()
                 
@@ -131,7 +131,7 @@ class Timeline(QGraphicsScene):
         # Mantieni le dimensioni attuali della scena quando la ridisegni
         current_height = self.sceneRect().height()
         self.clear()
-        self.setSceneRect(0, -30, new_width, current_height)
+        self.setSceneRect(0, 0, new_width, current_height)
         self.draw_tracks()
         
         # Recreate items with preserved properties
@@ -144,8 +144,54 @@ class Timeline(QGraphicsScene):
             self.addItem(item)
             item.setSelected(item_data['selected'])  # Restore selection state
 
+    def move_track(self, track_number, direction):
+        """
+        Sposta una traccia su o giù, portando con sé tutti i suoi item
+        Args:
+            track_number: il numero della traccia da spostare
+            direction: -1 per su, 1 per giù
+        """
+        # Verifica che lo spostamento sia valido
+        new_position = track_number + direction
+        if new_position < 0 or new_position >= self.num_tracks:
+            return
 
+        # Raccogli tutti gli item e le loro informazioni per track_number e new_position
+        items_on_tracks = {
+            track_number: [],
+            new_position: []
+        }
+        
+        # Raccogli gli item su entrambe le tracce
+        for item in self.items():
+            if isinstance(item, MusicItem):
+                current_track = int(item.pos().y() / self.track_height)
+                if current_track in items_on_tracks:
+                    items_on_tracks[current_track].append({
+                        'params': item.params.copy(),
+                        'width': item.rect().width(),
+                        'color': item.color,
+                        'name': item.name,
+                        'settings': item.settings,
+                        'pos_x': item.pos().x()
+                    })
 
+        # Pulisci la scena
+        self.clear()
+        self.draw_tracks()
+
+        # Ridisegna gli item scambiando le posizioni y
+        for track, items in items_on_tracks.items():
+            new_y = new_position * self.track_height if track == track_number else track_number * self.track_height
+            for item_data in items:
+                item = MusicItem(0, 0, item_data['width'], item_data['name'], 
+                            item_data['settings'], self.track_height)
+                item.params = item_data['params']
+                item.color = item_data['color']
+                item.setBrush(item_data['color'])
+                item.setPos(item_data['pos_x'], new_y)
+                self.addItem(item)
+                item.updateTextStyle()
 
 
 
