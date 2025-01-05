@@ -247,7 +247,9 @@ class MainWindow(QMainWindow):
             # Ridisegna la timeline con il nuovo colore delle tracce
             self.scene.clear()
             self.scene.draw_tracks()
-            self.view.ruler_scene.updateColor()
+            # Aggiorna i colori del ruler
+            self.view.ruler_scene.updateColors()  # Usa il nuovo metodo
+            self.view.ruler_scene.draw_ruler()  # Ridisegna il ruler
             # Ripristina gli item
             for item_data in stored_items:
                 item = MusicItem(0, 0, item_data['width'], item_data['name'], 

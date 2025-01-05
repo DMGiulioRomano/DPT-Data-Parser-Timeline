@@ -28,8 +28,6 @@ class TimelineView(QGraphicsView):
         self.ruler_view.setFixedHeight(70)
         self.ruler_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.ruler_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.ruler_view.setBackgroundBrush(QBrush(Qt.white))
-
         # Qui dobbiamo aggiungere il ruler alla ruler_layout (non al main_layout)
         ruler_layout.addWidget(self.ruler_view) 
 
