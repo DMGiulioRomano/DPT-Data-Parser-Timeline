@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
 )
 from ParamDialog import ParamDialog
+from Commands import MoveItemCommand
 
 
 class MusicItem(QGraphicsRectItem):
@@ -189,6 +190,7 @@ class MusicItem(QGraphicsRectItem):
             self.showParamDialog()
             return 
         self.drag_start = event.scenePos()
+        self.initial_pos = self.pos()  
         if not event.modifiers() & Qt.ControlModifier:
             if not self.isSelected():
                 scene = self.scene()
@@ -223,6 +225,18 @@ class MusicItem(QGraphicsRectItem):
             self.drag_start = event.scenePos()
             
     def mouseReleaseEvent(self, event):
+        if hasattr(self, 'initial_pos') and self.pos() != self.initial_pos:
+            # Trova la MainWindow per accedere al command_manager
+            main_window = None
+            view = self.scene().views()[0]
+            if view:
+                main_window = view.window()
+            
+            if main_window and hasattr(main_window, 'command_manager'):
+                command = MoveItemCommand(self, self.initial_pos, self.pos())
+                main_window.command_manager.execute(command)
+                main_window.update_undo_redo_actions()
+
         self.drag_start = None
         super().mouseReleaseEvent(event)
         

@@ -1,6 +1,6 @@
 import sys
 import yaml
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtGui import QPen, QColor, QBrush
 from PyQt5.QtWidgets import (
     QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItem,
@@ -109,9 +109,13 @@ class Timeline(QGraphicsScene):
             return item
 
 
+
     def scale_scene(self, factor):
         self.zoom_level *= factor
         new_width = max(self.min_width * self.zoom_level, self.sceneRect().width())
+        
+        # Store reference mapping between old and new items
+        item_references = {}
         
         # Store item data and selection state before clearing
         stored_items = []
@@ -123,12 +127,24 @@ class Timeline(QGraphicsScene):
                     'y': item.pos().y(),
                     'width': item.rect().width() * factor,
                     'color': item.color,
-                    'selected': item.isSelected(),  # Store selection state
-                    'name': item.name,  # Store the name
-                    'settings': item.settings  # Store the settings reference
+                    'selected': item.isSelected(),
+                    'name': item.name,
+                    'settings': item.settings,
+                    'original_item': item
                 })
 
-        # Mantieni le dimensioni attuali della scena quando la ridisegni
+        # Update command manager references if needed
+        if self.views():
+            main_window = self.views()[0].window()
+            if hasattr(main_window, 'command_manager'):
+                for command in main_window.command_manager._undo_stack + main_window.command_manager._redo_stack:
+                    for item_data in stored_items:
+                        if hasattr(command, 'item') and command.item == item_data['original_item']:
+                            # Aggiorniamo anche old_pos e new_pos nel comando
+                            command.old_pos = QPointF(command.old_pos.x() * factor, command.old_pos.y())
+                            command.new_pos = QPointF(command.new_pos.x() * factor, command.new_pos.y())
+                            item_data['command'] = command
+
         current_height = self.sceneRect().height()
         self.clear()
         self.setSceneRect(0, 0, new_width, current_height)
@@ -136,13 +152,21 @@ class Timeline(QGraphicsScene):
         
         # Recreate items with preserved properties
         for item_data in stored_items:
-            item = MusicItem(0, 0, item_data['width'], item_data['name'], item_data['settings'], self.track_height)  # Pass stored settings
+            item = MusicItem(0, 0, item_data['width'], item_data['name'], 
+                            item_data['settings'], self.track_height)
             item.params = item_data['params']
             item.color = item_data['color']
             item.setBrush(item_data['color'])
             item.setPos(item_data['x'], item_data['y'])
+            item.setSelected(item_data['selected'])
             self.addItem(item)
-            item.setSelected(item_data['selected'])  # Restore selection state
+            
+            # Update command reference if needed
+            if 'command' in item_data:
+                item_data['command'].item = item
+
+
+
 
     def move_track(self, track_number, direction):
         """

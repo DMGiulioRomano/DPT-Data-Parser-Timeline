@@ -7,17 +7,21 @@ from PyQt5.QtWidgets import (
     QMainWindow, QVBoxLayout, QPushButton, QWidget, QHBoxLayout, 
     QFileDialog, QComboBox, QLineEdit, QLabel, QMessageBox, QTextEdit
 )
+from PyQt5.QtGui import QKeySequence  # Nuovo import
+
 from Timeline import *
 from TimelineView import TimelineView
 from RenameDialog import RenameDialog
 from MusicItem import MusicItem
 from Settings import Settings
 from SettingsDialog import SettingsDialog
+from Commands import CommandManager
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.settings = Settings()
+        self.command_manager = CommandManager()
         self.setWindowTitle("DPT - Delta Personal Timeline")
         self.setGeometry(100, 100, 1200, 600)
         self.current_file = None
@@ -140,7 +144,22 @@ class MainWindow(QMainWindow):
 
     def _setup_edit_menu(self, menubar):
         edit_menu = menubar.addMenu('&Edit')
+
+        # Aggiungi i comandi Undo/Redo all'inizio del menu Edit
+        undo_action = edit_menu.addAction('&Undo')
+        undo_action.setShortcut(QKeySequence.Undo)
+        undo_action.triggered.connect(self.command_manager.undo)
+        undo_action.setEnabled(False)
+        self.undo_action = undo_action  
         
+        redo_action = edit_menu.addAction('&Redo')
+        redo_action.setShortcuts([QKeySequence.Redo, QKeySequence("Ctrl+Y"), QKeySequence("Ctrl+Shift+Z")])
+        redo_action.triggered.connect(self.command_manager.redo)
+        redo_action.setEnabled(False)
+        self.redo_action = redo_action  
+        
+        edit_menu.addSeparator()  
+
         rename_action = edit_menu.addAction('&Rename Clip')
         rename_action.setShortcut(Qt.Key_Return)
         rename_action.triggered.connect(self.rename_selected_clips)
@@ -535,6 +554,12 @@ class MainWindow(QMainWindow):
         if self.scene.grid_division > 1:
             self.scene.grid_division //= 2
             self.scene.draw_timeline()
+
+    def update_undo_redo_actions(self):
+        """Aggiorna lo stato dei pulsanti Undo/Redo"""
+        if self.undo_action and self.redo_action:  # Verifica che esistano
+            self.undo_action.setEnabled(self.command_manager.can_undo)
+            self.redo_action.setEnabled(self.command_manager.can_redo)
 
     def update_window_title(self):
         base_title = "DPT - Delta Personal Timeline"
