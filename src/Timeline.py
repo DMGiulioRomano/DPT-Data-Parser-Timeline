@@ -43,6 +43,11 @@ class Timeline(QGraphicsScene):
             text = QGraphicsTextItem(f"Track {i+1}")
             text.setPos(-70, y + 15)
             self.addItem(text)
+        # Aggiorna gli header nella view
+        if self.views():
+            main_view = self.views()[0]
+            if hasattr(main_view, 'update_track_headers'):
+                main_view.update_track_headers()
 
     def delete_track(self, track_number):
         # Salva gli item di tutte le tracce
@@ -86,7 +91,13 @@ class Timeline(QGraphicsScene):
                 item.setBrush(item_data['color'])
                 item.setPos(item.params['cAttacco'] * self.pixels_per_beat * self.zoom_level, y)
                 self.addItem(item)
+        # Aggiorna gli header dopo la cancellazione
+        if self.views():
+            main_view = self.views()[0]
+            if hasattr(main_view, 'update_track_headers'):
+                main_view.update_track_headers()
                 
+
     def add_music_item(self, seconds, track_number, duration=14, name="Clip", settings=None):
         if 0 <= track_number < self.num_tracks:
             x = seconds * self.pixels_per_beat * self.zoom_level  # Include zoom_level
@@ -165,6 +176,13 @@ class Timeline(QGraphicsScene):
             if 'command' in item_data:
                 item_data['command'].item = item
 
+        # Notifica il cambiamento di zoom al TimelineRuler
+        if self.views():
+            main_window = self.views()[0].window()
+            if hasattr(main_window, 'timeline_container'):
+                ruler = main_window.timeline_container.ruler_view.scene()
+                if ruler:
+                    ruler.update_zoom(self.zoom_level)
 
 
 
@@ -226,43 +244,9 @@ class TrackItem(QGraphicsRectItem):
         super().__init__(x, y, width, height)
         self.track_number = track_number
         self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)  # Necessario per itemChange
         self.base_color = None  # Colore di base dalla settings
         self.hover_color = None # Colore per hover
-        self.selected_color = QColor(Qt.white)  # Colore per la selezione
         
     def updateColors(self, base_color):
         self.base_color = QColor(base_color)
-        self.hover_color = QColor(base_color)
-        self.hover_color = self.hover_color.lighter(110)  # Rendilo 10% più chiaro
         self.setBrush(QBrush(self.base_color))
-
-    def hoverEnterEvent(self, event):
-        if not self.isSelected():
-            self.setBrush(QBrush(self.hover_color))
-        super().hoverEnterEvent(event)
-        
-    def hoverLeaveEvent(self, event):
-        if not self.isSelected():
-            self.setBrush(QBrush(self.base_color))
-        super().hoverLeaveEvent(event)
-
-    def mousePressEvent(self, event):
-        modifiers = QApplication.keyboardModifiers()
-        if not (modifiers & Qt.ControlModifier):  # Se Control/Command non è premuto
-            # Deseleziona tutte le altre tracce
-            if self.scene():
-                for item in self.scene().items():
-                    if isinstance(item, TrackItem) and item != self:
-                        item.setSelected(False)
-                        item.setBrush(QBrush(item.base_color))
-        super().mousePressEvent(event)
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.ItemSelectedChange:
-            if value:  # Se sta per essere selezionato
-                self.setBrush(QBrush(self.selected_color))
-            else:  # Se sta per essere deselezionato
-                self.setBrush(QBrush(self.base_color))
-        return super().itemChange(change, value)

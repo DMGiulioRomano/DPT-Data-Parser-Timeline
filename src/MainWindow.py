@@ -16,6 +16,7 @@ from MusicItem import MusicItem
 from Settings import Settings
 from SettingsDialog import SettingsDialog
 from Commands import CommandManager
+from TimelineContainer import TimelineContainer
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -39,11 +40,8 @@ class MainWindow(QMainWindow):
         
         # Timeline setup
         self.scene = Timeline(self.settings)
-        self.view = TimelineView(self.scene)
-        layout.addWidget(self.view.get_widget())
-        self.view.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.view.setViewportMargins(70, 0, 0, 0)
+        self.timeline_container = TimelineContainer(self.scene)
+        layout.addWidget(self.timeline_container)
         
         # Search bar
         layout.addWidget(self._create_search_bar())
@@ -101,11 +99,11 @@ class MainWindow(QMainWindow):
         
         zoom_in.clicked.connect(lambda: (
             self.scene.scale_scene(1.3),
-            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+            self.timeline_container.ruler_view.update_zoom(self.scene.zoom_level)
         ))
         zoom_out.clicked.connect(lambda: (
             self.scene.scale_scene(0.7),
-            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+            self.timeline_container.ruler_view.update_zoom(self.scene.zoom_level)
         ))
         add_item.clicked.connect(self.add_new_item)
         save_button.clicked.connect(self.save_to_yaml)
@@ -204,14 +202,14 @@ class MainWindow(QMainWindow):
         zoom_in_action.setShortcut('Ctrl++')
         zoom_in_action.triggered.connect(lambda: (
             self.scene.scale_scene(1.2),
-            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+            self.timeline_container.ruler_view.update_zoom(self.scene.zoom_level)
         ))
         
         zoom_out_action = view_menu.addAction('Zoom &Out')
         zoom_out_action.setShortcut('Ctrl+-')
         zoom_out_action.triggered.connect(lambda: (
             self.scene.scale_scene(0.8),
-            self.view.ruler_scene.update_zoom(self.scene.zoom_level)
+            self.timeline_container.ruler_view.update_zoom(self.scene.zoom_level)
         ))
         
         increase_width_action = view_menu.addAction('Increase Width')
@@ -326,8 +324,8 @@ class MainWindow(QMainWindow):
             
             self.scene.clear()
             self.scene.draw_tracks()
-            self.view.ruler_scene.updateColors()
-            self.view.ruler_scene.draw_ruler()
+            self.timeline_container.ruler_view.updateColors()
+            self.timeline_container.ruler_view.draw_ruler()
             
             for item_data in stored_items:
                 item = MusicItem(0, 0, item_data['width'], item_data['name'], 
@@ -402,9 +400,9 @@ class MainWindow(QMainWindow):
                     item.text.setPlainText(new_name)
 
     def add_new_item(self):
-        viewport_center = self.view.mapToScene(
-            self.view.viewport().width() // 2,
-            self.view.viewport().height() // 2
+        viewport_center = self.timeline_container.timeline_view.mapToScene(
+            self.timeline_container.timeline_view.viewport().width() // 2,
+            self.timeline_container.timeline_view.viewport().height() // 2
         )
         
         track_number = max(0, min(
@@ -485,10 +483,13 @@ class MainWindow(QMainWindow):
                 self.current_file = file_path
                 with open(file_path, 'r') as f:
                     data = yaml.safe_load(f)
-                    
+
+                # Pulisci la scena esistente                    
                 self.scene.clear()
+
+                # Imposta il numero di tracce
                 self.scene.num_tracks = len(data['comportamenti'])
-                self.scene.setSceneRect(0, -30, self.scene.sceneRect().width(), 
+                self.scene.setSceneRect(0, 0, self.scene.sceneRect().width(), 
                                     (self.scene.num_tracks * self.scene.track_height))
                 
                 self.scene.draw_tracks()
@@ -519,6 +520,14 @@ class MainWindow(QMainWindow):
                      
                 self.update_window_title()
                 self.log_message(f"File caricato con successo: {file_path}")
+                self.timeline_container.timeline_view.viewport().update()
+                self.timeline_container.ruler_view.viewport().update()
+                self.timeline_container.track_header_view.viewport().update()
+
+                # Forza la sincronizzazione degli scroll
+                current_scroll = self.timeline_container.timeline_view.horizontalScrollBar().value()
+                self.timeline_container.ruler_view.horizontalScrollBar().setValue(current_scroll)
+
             except Exception as e:
                 self.log_message(f"Errore nel caricamento del file: {e}")
 
@@ -560,6 +569,12 @@ class MainWindow(QMainWindow):
         if self.undo_action and self.redo_action:  # Verifica che esistano
             self.undo_action.setEnabled(self.command_manager.can_undo)
             self.redo_action.setEnabled(self.command_manager.can_redo)
+
+    def update_track_headers(self):
+        self.timeline_container.track_header_view.update_tracks(
+            self.scene.num_tracks,
+            self.scene.track_height
+        )
 
     def update_window_title(self):
         base_title = "DPT - Delta Personal Timeline"

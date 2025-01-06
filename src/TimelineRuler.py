@@ -3,6 +3,22 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPen, QColor, QBrush
 
 class TimelineRuler(QGraphicsScene):
+    """
+    Gestisce il righello temporale sopra la timeline principale.
+    Mostra le divisioni temporali e si adatta al livello di zoom corrente.
+
+    Signals:
+        zoom_changed (float): Emesso quando cambia il livello di zoom
+
+    Attributes:
+        settings: Impostazioni dell'applicazione
+        main_timeline: Riferimento alla timeline principale
+        zoom_level: Livello corrente di zoom
+        pixels_per_beat: Pixel per ogni beat
+        grid_height: Altezza della griglia
+        total_height: Altezza totale del righello
+        text_margin: Margine per il testo
+    """
     zoom_changed = pyqtSignal(float)
     
     def __init__(self, settings, main_timeline):
@@ -17,10 +33,7 @@ class TimelineRuler(QGraphicsScene):
         self.setSceneRect(0, 0, main_timeline.sceneRect().width(), self.total_height)
         self.updateColors()
         self.draw_ruler()
-        
-        # Connessione per aggiornamenti dalla timeline principale
-        self.main_timeline.sceneRectChanged.connect(self.update_width)
-        
+                
     def update_width(self):
         """Aggiorna la larghezza del ruler quando la timeline principale cambia"""
         self.setSceneRect(0, 0, self.main_timeline.sceneRect().width(), self.total_height)

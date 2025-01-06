@@ -23,6 +23,8 @@ class MusicItem(QGraphicsRectItem):
         self.text.setPos(5, track_height/4)
         self.drag_start = None
         self.track_index = 0  # inizializza
+        self.setAcceptHoverEvents(True)  # Aggiungi questa riga
+        self.is_hovered = False  # Aggiungi questa riga
         
         self.params = {
             "cAttacco": 0,
@@ -41,23 +43,8 @@ class MusicItem(QGraphicsRectItem):
             self.text.setFont(font)
             self.text.setDefaultTextColor(QColor(self.settings.get('text_color', '#000000')))
 
-    def paint(self, painter, option, widget):
-            super().paint(painter, option, widget)
-            if hasattr(self, 'highlighted') and self.highlighted:
-                # Disegna l'evidenziazione della ricerca
-                pen = QPen(QColor(255, 165, 0), 3)  # Arancione per l'evidenziazione della ricerca
-                painter.setPen(pen)
-                painter.drawRect(self.rect())
-            elif self.isSelected():
-                # Disegna l'evidenziazione della selezione
-                pen = QPen(Qt.blue, 2, Qt.DashLine)
-                painter.setPen(pen)
-                painter.drawRect(self.rect())
-
     def mouseDoubleClickEvent(self, event):
         self.showParamDialog()
-
-
 
     def showParamDialog(self):
         dialog = ParamDialog(self.params, self.color)
@@ -241,3 +228,44 @@ class MusicItem(QGraphicsRectItem):
         super().mouseReleaseEvent(event)
         
     
+    def hoverEnterEvent(self, event):
+        """Chiamato quando il mouse entra nell'item"""
+        self.is_hovered = True
+        self.update()  # Forza il ridisegno
+        super().hoverEnterEvent(event)
+        
+    def hoverLeaveEvent(self, event):
+        """Chiamato quando il mouse esce dall'item"""
+        self.is_hovered = False
+        self.update()  # Forza il ridisegno
+        super().hoverLeaveEvent(event)
+        
+    def paint(self, painter, option, widget):
+        # Salva il colore originale
+        original_brush = self.brush()
+        
+        if self.isSelected():
+            # Se selezionato, molto più chiaro (70% più luminoso)
+            lighter_color = self.color.lighter(140)
+            self.setBrush(lighter_color)
+        elif self.is_hovered:
+            # Se hover, leggermente più chiaro (20% più luminoso)
+            lighter_color = self.color.lighter(110)
+            self.setBrush(lighter_color)
+            
+        # Disegna l'item
+        super().paint(painter, option, widget)
+        
+        # Ripristina il colore originale
+        self.setBrush(original_brush)
+        
+        if hasattr(self, 'highlighted') and self.highlighted:
+            # Disegna l'evidenziazione della ricerca
+            pen = QPen(QColor(255, 165, 0), 3)
+            painter.setPen(pen)
+            painter.drawRect(self.rect())
+        elif self.isSelected():
+            # Disegna il bordo di selezione
+            pen = QPen(Qt.blue, 2, Qt.DashLine)
+            painter.setPen(pen)
+            painter.drawRect(self.rect())
