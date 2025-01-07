@@ -18,6 +18,7 @@ class MusicItem(QGraphicsRectItem):
         self.color = QColor(100, 150, 200)  # Default color
         self.setBrush(self.color)
         self.setPen(QPen(Qt.black))
+        self.track_index = 0  # inizializza
         self.name = name
         self.text = QGraphicsTextItem(self.name, self)
         self.text.setPos(5, track_height/4)
@@ -35,6 +36,43 @@ class MusicItem(QGraphicsRectItem):
             "frequenza": [6,1],
             "posizione": -8
         }
+
+    def updateHeight(self, new_height):
+        """
+        Aggiorna l'altezza dell'item e scala il testo proporzionalmente
+        Args:
+            new_height: nuova altezza dell'item
+        """
+        current_rect = self.rect()
+        self.setRect(0, 0, current_rect.width(), new_height)
+        
+        # Calcola la dimensione del testo proporzionale all'altezza
+        base_text_size = self.settings.get('item_text_size', 12)
+        height_ratio = new_height / 50  # 50 è l'altezza di default
+        new_text_size = max(8, min(base_text_size * height_ratio, 24))  # Limita tra 8 e 24
+        
+        # Aggiorna il font del testo
+        font = self.text.font()
+        font.setPointSize(int(new_text_size))
+        self.text.setFont(font)
+        
+        # Centra verticalmente il testo nel nuovo spazio
+        text_height = self.text.boundingRect().height()
+        vertical_center = (new_height - text_height) / 2
+        self.text.setPos(5, vertical_center)
+        
+        # Se il testo è troppo largo, aggiungi dei puntini di sospensione
+        text_width = self.text.boundingRect().width()
+        available_width = current_rect.width() - 10  # 10 pixel di margine
+        
+        if text_width > available_width:
+            original_text = self.text.toPlainText()
+            # Trova la lunghezza massima del testo che si adatta
+            ellipsis = "..."
+            i = len(original_text)
+            while i > 0 and self.text.boundingRect().width() > available_width:
+                i -= 1
+                self.text.setPlainText(original_text[:i] + ellipsis)  
 
     def updateTextStyle(self):
         if self.settings:
@@ -144,11 +182,8 @@ class MusicItem(QGraphicsRectItem):
             grid_size = (self.scene().pixels_per_beat * self.scene().zoom_level) / 16
             grid_x = max(0,round(newPos.x() / grid_size) * grid_size)
             
-            track_y = (max(0, min(
-                round((newPos.y() - self.scene().grid_height) / self.scene().track_height),
-                self.scene().num_tracks - 1
-            )) * self.scene().track_height)
-            
+            track_y = self.track_index * self.scene().track_height
+
             # Update cAttacco
             self.params['cAttacco'] = round(grid_x / (self.scene().pixels_per_beat * self.scene().zoom_level),3)
             
@@ -161,7 +196,7 @@ class MusicItem(QGraphicsRectItem):
                 try:
                     for item in self.scene().selectedItems():
                         if item != self and isinstance(item, MusicItem):
-                            new_item_pos = item.pos() + delta
+                            new_item_pos = QPointF(item.pos().x() + delta.x(), item.pos().y())
                             item.setPos(new_item_pos)
                             item.params['cAttacco'] = new_item_pos.x() / (self.scene().pixels_per_beat * self.scene().zoom_level)
                 finally:

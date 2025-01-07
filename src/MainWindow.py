@@ -17,6 +17,7 @@ from Settings import Settings
 from SettingsDialog import SettingsDialog
 from Commands import CommandManager
 from TimelineContainer import TimelineContainer
+from TrackHeaderView import TrackHeaderItem
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -32,17 +33,18 @@ class MainWindow(QMainWindow):
         self._setup_file_menu(menubar)
         self._setup_edit_menu(menubar)
         self._setup_view_menu(menubar)
+        self._setup_help_menu(menubar)
         self._setup_settings_menu(menubar)
         
         # Main widget setup
         central_widget = QWidget()
         layout = QVBoxLayout(central_widget)
         
-        # Timeline setup
+        self.selected_track = None
         self.scene = Timeline(self.settings)
         self.timeline_container = TimelineContainer(self.scene)
         layout.addWidget(self.timeline_container)
-        
+        self.timeline_container.track_header_view.scene.track_selection_changed.connect(self.on_track_selection_changed)
         # Search bar
         layout.addWidget(self._create_search_bar())
         
@@ -63,6 +65,8 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(bottom_container)
         self.setCentralWidget(central_widget)
+
+        QTimer.singleShot(0, lambda: self.timeline_container.timeline_view.setFocus())
 
     def _create_search_bar(self):
         search_widget = QWidget()
@@ -163,7 +167,7 @@ class MainWindow(QMainWindow):
         rename_action.triggered.connect(self.rename_selected_clips)
         
         new_item_action = edit_menu.addAction('New Item')
-        new_item_action.setShortcut('Ctrl+T')
+        new_item_action.setShortcut('Ctrl+1')
         new_item_action.triggered.connect(self.add_new_item)
         
         new_track_action = edit_menu.addAction('New Track')
@@ -187,13 +191,13 @@ class MainWindow(QMainWindow):
         move_left_action.setShortcut('Ctrl+Left')
         move_left_action.triggered.connect(lambda: self.move_selected_items(-1))
         
-        move_up_action = edit_menu.addAction('Move Track Up')
+        move_up_action = edit_menu.addAction('Move Item On Track Up')
         move_up_action.setShortcut('Ctrl+Up')
-        move_up_action.triggered.connect(lambda: self.move_tracks(-1))
+        move_up_action.triggered.connect(lambda: self.move_items_on_tracks(-1))
         
-        move_down_action = edit_menu.addAction('Move Track Down')
+        move_down_action = edit_menu.addAction('Move Item On Track Down')
         move_down_action.setShortcut('Ctrl+Down')
-        move_down_action.triggered.connect(lambda: self.move_tracks(1))
+        move_down_action.triggered.connect(lambda: self.move_items_on_tracks(1))
 
     def _setup_view_menu(self, menubar):
         view_menu = menubar.addMenu('&View')
@@ -226,11 +230,65 @@ class MainWindow(QMainWindow):
         view_log_action.setChecked(True)
         view_log_action.triggered.connect(lambda checked: self.log_window.setVisible(checked))
 
+        increase_height_action = view_menu.addAction('Increase Track Height')
+        increase_height_action.setShortcut('Ctrl+Shift+Up')
+        increase_height_action.triggered.connect(lambda: self.modify_track_height(1.2))
+        
+        decrease_height_action = view_menu.addAction('Decrease Track Height')
+        decrease_height_action.setShortcut('Ctrl+Shift+Down')
+        decrease_height_action.triggered.connect(lambda: self.modify_track_height(0.8))
+
+    def modify_track_height(self, factor):
+        """Modifica l'altezza delle tracce"""
+        self.scene.scale_track_height(factor)
+
     def _setup_settings_menu(self, menubar):
         settings_menu = menubar.addMenu('&Settings')
         settings_action = settings_menu.addAction('&Preferences')
         settings_action.setShortcut('Ctrl+,')
         settings_action.triggered.connect(self.show_settings_dialog)
+
+    def _setup_help_menu(self, menubar):
+        help_menu = menubar.addMenu('&Help')
+        shortcuts_action = help_menu.addAction('Keyboard Shortcuts')
+        shortcuts_action.triggered.connect(self.show_shortcuts)
+
+    def show_shortcuts(self):
+        shortcuts = """
+        File:
+        - New: Ctrl+N
+        - Open: Ctrl+O  
+        - Save: Ctrl+S
+        - Save As: Ctrl+Shift+S
+        - Exit: Ctrl+Q
+
+        Edit:
+        - Undo: Ctrl+Z
+        - Redo: Ctrl+Y/Ctrl+Shift+Z
+        - Rename Clip: Return
+        - New Item: Ctrl+1  
+        - New Track: Ctrl+2
+        - Delete Track: Alt+Del
+        - Show Parameters: Ctrl+Return
+        - Duplicate: Ctrl+D
+
+        Navigation:
+        - Move Right: Ctrl+Right
+        - Move Left: Ctrl+Left  
+        - Move Track Up: Ctrl+Up
+        - Move Track Down: Ctrl+Down
+
+        View:
+        - Zoom In: Ctrl++ 
+        - Zoom Out: Ctrl+-
+        - Increase Width: Ctrl+Shift+Right
+        - Decrease Width: Ctrl+Shift+Left
+
+        Settings:
+        - Preferences: Ctrl+,
+        """
+        QMessageBox.information(self, "Keyboard Shortcuts", shortcuts)
+
 
     def log_message(self, message):
         """Aggiunge un messaggio alla finestra di log"""
@@ -298,12 +356,21 @@ class MainWindow(QMainWindow):
             self.scene.addItem(item)
 
     def delete_selected_track(self):
-        selected_items = self.scene.selectedItems()
-        for item in selected_items:
-            if isinstance(item, TrackItem):
-                self.scene.delete_track(item.track_number)
-                break
-
+        """Elimina la traccia selezionata, sia dalla selezione dell'header che della traccia stessa"""
+        # Controlla prima gli header selezionati
+        selected_headers = [item for item in self.timeline_container.track_header_view.scene.items() 
+                        if isinstance(item, TrackHeaderItem) and item.is_selected]
+        
+        if selected_headers:
+            for header in selected_headers:
+                self.scene.delete_track(header.track_number)
+        else:
+            # Comportamento esistente per la selezione della traccia
+            for item in self.scene.selectedItems():
+                if isinstance(item, TrackItem):
+                    self.scene.delete_track(item.track_number)
+                    break
+            
     def sort_items_by_attack(self, items):
         return sorted(items, key=lambda x: float(x['cAttacco']))
 
@@ -342,7 +409,7 @@ class MainWindow(QMainWindow):
         if selected and isinstance(selected[0], MusicItem):
             selected[0].showParamDialog()
 
-    def move_tracks(self, direction):
+    def move_items_on_tracks(self, direction):
         selected_items = self.scene.selectedItems()
         track_groups = {}
         
@@ -360,15 +427,26 @@ class MainWindow(QMainWindow):
                 item.track_index = new_track
                 item.setPos(item.pos().x(), new_y)
 
+
     def move_selected_items(self, direction):
+        """
+        Sposta gli item selezionati orizzontalmente mantenendo la loro traccia corrente
+        Args:
+            direction: -1 per sinistra, 1 per destra
+        """
         min_grid_size = self.scene.pixels_per_beat / 32
         grid_size = max(min_grid_size, (self.scene.pixels_per_beat / 16) / self.scene.zoom_level)
         delta = grid_size * direction
         
         for item in self.scene.selectedItems():
             if isinstance(item, MusicItem):
+                # Calcola la nuova posizione x mantenendo la y corrente
                 new_x = max(0, item.pos().x() + delta)
-                item.setPos(new_x, item.pos().y())
+                current_track = int(item.pos().y() / self.scene.track_height)
+                track_y = current_track * self.scene.track_height
+                
+                # Imposta la nuova posizione mantenendo la traccia corrente
+                item.setPos(new_x, track_y)
                 item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
 
     def modify_item_width(self, scale_factor):
@@ -382,7 +460,6 @@ class MainWindow(QMainWindow):
     def new_file(self):
         self.current_file = None
         self.scene.clear()
-        self.scene.draw_timeline()
         self.scene.draw_tracks()
         self.update_window_title()
 
@@ -399,21 +476,18 @@ class MainWindow(QMainWindow):
                     item.name = new_name
                     item.text.setPlainText(new_name)
 
+    def on_track_selection_changed(self, track_number, is_selected):
+        if is_selected:
+            self.selected_track = track_number
+        else:
+            self.selected_track = None
+
     def add_new_item(self):
-        viewport_center = self.timeline_container.timeline_view.mapToScene(
-            self.timeline_container.timeline_view.viewport().width() // 2,
-            self.timeline_container.timeline_view.viewport().height() // 2
-        )
-        
-        track_number = max(0, min(
-            int((viewport_center.y() - self.scene.grid_height) / self.scene.track_height),
-            self.scene.num_tracks - 1
-        ))
-        
-        x_pos = viewport_center.x()
-        beats = x_pos / (self.scene.pixels_per_beat * self.scene.zoom_level)
-        
-        self.scene.add_music_item(beats, track_number, 3, "New Clip", self.settings)
+        if self.selected_track is not None:
+            self.scene.add_music_item(0, self.selected_track, 3, "New Clip", self.settings)
+        else:
+            track_number = 0
+            self.scene.add_music_item(0, track_number, 3, "New Clip", self.settings)
 
     def save_to_yaml(self):
         if not self.current_file:

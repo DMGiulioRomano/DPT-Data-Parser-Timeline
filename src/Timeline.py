@@ -1,6 +1,6 @@
 import sys
 import yaml
-from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtCore import Qt, QPointF, QTimer
 from PyQt5.QtGui import QPen, QColor, QBrush
 from PyQt5.QtWidgets import (
     QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItem,
@@ -8,12 +8,14 @@ from PyQt5.QtWidgets import (
 )
 from MusicItem import MusicItem
 
+MIN_SCENE_HEIGHT = 600  # Sposta qui la costante
+
 class Timeline(QGraphicsScene):
     def __init__(self,settings):
         super().__init__()
         self.settings = settings
         self.min_width = 2000
-        self.min_height = 600
+        self.min_height = MIN_SCENE_HEIGHT
         self.setSceneRect(0, 0, self.min_width, self.min_height)
         self.zoom_level = 1.0
         self.pixels_per_beat = 100
@@ -23,7 +25,36 @@ class Timeline(QGraphicsScene):
         self.num_tracks = self.settings.get('default_track_count', 8)
         self.setBackgroundBrush(QBrush(QColor(220, 220, 220)))
         self.draw_tracks()
+        QTimer.singleShot(0,self.initialize_components)
+
+
+    def initialize_components(self):
+        """Inizializza e aggiorna tutti i componenti necessari"""
+        if self.views():
+            main_window = self.views()[0].window()
+            if hasattr(main_window, 'timeline_container'):
+                container = main_window.timeline_container
                 
+                # Aggiorna gli header delle tracce
+                container.track_header_view.update_tracks(
+                    self.num_tracks,
+                    self.track_height
+                )
+                
+                # Aggiorna e sincronizza il ruler
+                if hasattr(container, 'ruler_view') and container.ruler_view:
+                    ruler = container.ruler_view
+                    ruler.update_zoom(self.zoom_level)
+                    
+                    # Sincronizza lo scroll orizzontale
+                    if container.timeline_view:
+                        current_scroll = container.timeline_view.horizontalScrollBar().value()
+                        ruler.horizontalScrollBar().setValue(current_scroll)
+                    
+                    # Forza l'aggiornamento delle viste
+                    ruler.viewport().update()
+                    container.timeline_view.viewport().update()
+
     def draw_tracks(self):
         required_height = (self.num_tracks * self.track_height)
         current_height = max(required_height, self.min_height)
@@ -45,9 +76,15 @@ class Timeline(QGraphicsScene):
             self.addItem(text)
         # Aggiorna gli header nella view
         if self.views():
-            main_view = self.views()[0]
-            if hasattr(main_view, 'update_track_headers'):
-                main_view.update_track_headers()
+            view = self.views()[0]
+            if view and view.window():
+                main_window = view.window()
+                if hasattr(main_window, 'timeline_container'):
+                    main_window.timeline_container.track_header_view.update_tracks(
+                        self.num_tracks,
+                        self.track_height
+                    )
+
 
     def delete_track(self, track_number):
         # Salva gli item di tutte le tracce
@@ -101,7 +138,7 @@ class Timeline(QGraphicsScene):
     def add_music_item(self, seconds, track_number, duration=14, name="Clip", settings=None):
         if 0 <= track_number < self.num_tracks:
             x = seconds * self.pixels_per_beat * self.zoom_level  # Include zoom_level
-            y = (track_number * self.track_height)
+            y = track_number * self.track_height
             
             # Convert duration to width considering zoom_level
             if isinstance(duration, (list, tuple)):
@@ -119,7 +156,66 @@ class Timeline(QGraphicsScene):
             self.addItem(item)
             return item
 
-
+    def scale_track_height(self, factor):
+        """
+        Ridimensiona l'altezza delle tracce mantenendo le proporzioni
+        Args:
+            factor: fattore di scala (>1 per ingrandire, <1 per rimpicciolire)
+        """
+        # Calcola la nuova altezza delle tracce
+        new_track_height = max(20, min(200, self.track_height * factor))  # Limiti min/max
+        if new_track_height == self.track_height:
+            return
+            
+        # Salva lo stato attuale degli item
+        stored_items = []
+        for item in self.items():
+            if isinstance(item, MusicItem):
+                stored_items.append({
+                    'params': item.params.copy(),
+                    'x': item.pos().x(),
+                    'track_index': int(item.pos().y() / self.track_height),
+                    'width': item.rect().width(),
+                    'color': item.color,
+                    'name': item.name,
+                    'settings': item.settings
+                })
+        
+        # Aggiorna l'altezza delle tracce
+        self.track_height = new_track_height
+        
+        # Ricalcola l'altezza totale della scena
+        required_height = self.num_tracks * self.track_height
+        new_height = max(required_height, self.min_height)
+        
+        # Aggiorna la scena
+        self.setSceneRect(0, 0, self.sceneRect().width(), new_height)
+        self.clear()
+        self.draw_tracks()
+        
+        # Ripristina gli item con le nuove proporzioni
+        for item_data in stored_items:
+            new_y = item_data['track_index'] * self.track_height
+            item = MusicItem(0, 0, item_data['width'], item_data['name'], 
+                            item_data['settings'], self.track_height)
+            # Usa il nuovo metodo updateHeight per gestire il ridimensionamento
+            item.updateHeight(self.track_height)
+            item.params = item_data['params']
+            item.color = item_data['color']
+            item.setBrush(item_data['color'])
+            item.setPos(item_data['x'], new_y)
+            self.addItem(item)
+        
+        # Notifica il cambiamento agli altri componenti
+        if self.views():
+            main_window = self.views()[0].window()
+            if hasattr(main_window, 'timeline_container'):
+                container = main_window.timeline_container
+                if hasattr(container, 'track_header_view'):
+                    container.track_header_view.update_tracks(
+                        self.num_tracks,
+                        self.track_height
+                    )
 
     def scale_scene(self, factor):
         self.zoom_level *= factor
