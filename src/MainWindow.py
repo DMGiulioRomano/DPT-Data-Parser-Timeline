@@ -438,16 +438,34 @@ class MainWindow(QMainWindow):
         grid_size = max(min_grid_size, (self.scene.pixels_per_beat / 16) / self.scene.zoom_level)
         delta = grid_size * direction
         
-        for item in self.scene.selectedItems():
-            if isinstance(item, MusicItem):
-                # Calcola la nuova posizione x mantenendo la y corrente
+        selected_items = [item for item in self.scene.selectedItems() if isinstance(item, MusicItem)]
+
+        # Se stiamo muovendo verso destra, permetti sempre il movimento
+        if direction > 0:
+            for item in selected_items:
                 new_x = max(0, item.pos().x() + delta)
                 current_track = int(item.pos().y() / self.scene.track_height)
                 track_y = current_track * self.scene.track_height
-                
-                # Imposta la nuova posizione mantenendo la traccia corrente
                 item.setPos(new_x, track_y)
                 item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
+        else:
+            # Verifica se qualsiasi item raggiungerebbe zero con questo movimento verso sinistra
+            would_hit_zero = False
+            for item in selected_items:
+                proposed_x = item.pos().x() + delta
+                if proposed_x <= 0:
+                    would_hit_zero = True
+                    break
+
+            # Se nessun item raggiunge zero, permetti il movimento
+            if not would_hit_zero:
+                for item in selected_items:
+                    new_x = max(0, item.pos().x() + delta)
+                    current_track = int(item.pos().y() / self.scene.track_height)
+                    track_y = current_track * self.scene.track_height
+                    item.setPos(new_x, track_y)
+                    item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
+
 
     def modify_item_width(self, scale_factor):
         for item in self.scene.selectedItems():

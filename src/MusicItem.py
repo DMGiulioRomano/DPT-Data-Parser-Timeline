@@ -172,47 +172,121 @@ class MusicItem(QGraphicsRectItem):
                 self.setRect(0, 0, new_width, self.rect().height())
                 self.text.setPos(5, self.rect().height()/4)
 
-
-
-
-
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange and self.scene():
             newPos = value
             grid_size = (self.scene().pixels_per_beat * self.scene().zoom_level) / 16
-            grid_x = max(0,round(newPos.x() / grid_size) * grid_size)
-            
-            track_y = self.track_index * self.scene().track_height
+
+            if newPos.x() < grid_size:
+                grid_x = 0
+            else:
+                grid_x = round(newPos.x() / grid_size) * grid_size
+
+            # Calcola la nuova traccia basata sulla posizione Y
+            new_track = max(0, min(
+                int(newPos.y() / self.scene().track_height),
+                self.scene().num_tracks - 1
+            ))
+            track_y = new_track * self.scene().track_height
+            self.track_index = new_track  # Aggiorna il track_index
 
             # Update cAttacco
-            self.params['cAttacco'] = round(grid_x / (self.scene().pixels_per_beat * self.scene().zoom_level),3)
+            self.params['cAttacco'] = float(round(grid_x / (self.scene().pixels_per_beat * self.scene().zoom_level), 3))
             
-            # Only move other items during direct drag, not during recursive updates
-            if self.isSelected() and not hasattr(self, '_updating'):
-                original_pos = self.pos()
-                delta = QPointF(grid_x - original_pos.x(), track_y - original_pos.y())
+            if self.isSelected() and not hasattr(self, '_updating_group'):
+                delta_x = round(grid_x - self.pos().x(),3)
+                delta_y = newPos.y() - self.pos().y()
+                delta = QPointF(delta_x, delta_y)
                 
-                self._updating = True  # Prevent recursive updates
+                self._updating_group = True
                 try:
                     for item in self.scene().selectedItems():
                         if item != self and isinstance(item, MusicItem):
-                            new_item_pos = QPointF(item.pos().x() + delta.x(), item.pos().y())
-                            item.setPos(new_item_pos)
+                            new_item_pos = item.pos() + delta
+                            new_item_track = max(0, min(
+                                int(new_item_pos.y() / self.scene().track_height),
+                                self.scene().num_tracks - 1
+                            ))
+                            new_item_y = new_item_track * self.scene().track_height
+
+                            item.setPos(QPointF(new_item_pos.x(), new_item_y))
+                            item.track_index = new_item_track
                             item.params['cAttacco'] = new_item_pos.x() / (self.scene().pixels_per_beat * self.scene().zoom_level)
                 finally:
-                    delattr(self, '_updating')
+                    delattr(self, '_updating_group')
             
             return QPointF(grid_x, track_y)
             
         return super().itemChange(change, value)
 
 
+    def mouseMoveEvent(self, event):
+        if not self.drag_start:
+            return
+            
+        # Calcola il delta rispetto all'ultimo movimento
+        delta = event.scenePos() - self.drag_start
+        grid_size = (self.scene().pixels_per_beat * self.scene().zoom_level) / 16
+        
+        if not self.isSelected():
+            return
+            
+        selected_items = [item for item in self.scene().selectedItems() if isinstance(item, MusicItem)]
+        
+        # Calcola la posizione più a sinistra tra tutti gli item selezionati dopo il movimento
+        leftmost_position = float('inf')
+        for item in selected_items:
+            proposed_x = item.pos().x() + delta.x()
+            if proposed_x < grid_size:
+                proposed_x = 0
+            else:
+                proposed_x = round(proposed_x / grid_size) * grid_size
+            leftmost_position = min(leftmost_position, proposed_x)
+        
+        # Se la posizione più a sinistra è <= 0, permetti solo movimento verticale
+        if leftmost_position <= 0:
+            for item in selected_items:
+                current_y = item.pos().y()
+                new_track = max(0, min(
+                    int((current_y + delta.y()) / self.scene().track_height),
+                    self.scene().num_tracks - 1
+                ))
+                new_y = new_track * self.scene().track_height
+                item.setPos(item.pos().x(), new_y)
+        else:
+            # Movimento normale in entrambe le direzioni
+            for item in selected_items:
+                current_x = item.pos().x()
+                current_y = item.pos().y()
+                
+                # Calcola nuova posizione x con snap alla griglia
+                proposed_x = current_x + delta.x()
+                if proposed_x < grid_size:
+                    new_x = 0
+                else:
+                    new_x = round(proposed_x / grid_size) * grid_size
+                
+                # Calcola la nuova traccia
+                new_track = max(0, min(
+                    int((current_y + delta.y()) / self.scene().track_height),
+                    self.scene().num_tracks - 1
+                ))
+                new_y = new_track * self.scene().track_height
+                
+                # Applica la nuova posizione
+                item.setPos(new_x, new_y)
+                item.params['cAttacco'] = round(new_x / (self.scene().pixels_per_beat * self.scene().zoom_level), 3)
+        
+        # Aggiorna il punto di riferimento per il prossimo movimento
+        self.drag_start = event.scenePos()
+
     def mousePressEvent(self, event):
         if event.modifiers() & Qt.MetaModifier:  # Command/Meta key
             self.showParamDialog()
             return 
         self.drag_start = event.scenePos()
-        self.initial_pos = self.pos()  
+        self.initial_pos = self.pos()  # Salva la posizione iniziale
+        
         if not event.modifiers() & Qt.ControlModifier:
             if not self.isSelected():
                 scene = self.scene()
@@ -220,33 +294,22 @@ class MusicItem(QGraphicsRectItem):
                     for item in scene.selectedItems():
                         item.setSelected(False)
             self.setSelected(True)
+            
+        # Salva la posizione iniziale per tutti gli item selezionati
+        if self.scene():
+            for item in self.scene().selectedItems():
+                if isinstance(item, MusicItem):
+                    item.initial_drag_pos = item.pos()
+        
         super().mousePressEvent(event)
 
-
-    
-    def mouseMoveEvent(self, event):
-        if self.drag_start:
-            delta = event.scenePos() - self.drag_start
-            grid_size = (self.scene().pixels_per_beat * self.scene().zoom_level) / 16
-            new_x = max(0,round((self.pos().x() + delta.x()) / grid_size) * grid_size)
-            
-            track_y = self.scene().grid_height + (max(0, min(
-                round((event.scenePos().y() - self.scene().grid_height) / self.scene().track_height),
-                self.scene().num_tracks - 1
-            )) * self.scene().track_height)
-            
-            self.setPos(new_x, track_y)
-            self.params['cAttacco'] = round(new_x / (self.scene().pixels_per_beat * self.scene().zoom_level),3)
-            
-            if self.isSelected():
-                for item in self.scene().selectedItems():
-                    if item != self and isinstance(item, MusicItem):
-                        item.setPos(item.pos() + delta)
-                        item.params['cAttacco'] = round(item.pos().x() / (self.scene().pixels_per_beat * self.scene().zoom_level),3)
-            
-            self.drag_start = event.scenePos()
-            
     def mouseReleaseEvent(self, event):
+        # Rimuovi le posizioni iniziali salvate
+        if self.scene():
+            for item in self.scene().selectedItems():
+                if isinstance(item, MusicItem) and hasattr(item, 'initial_drag_pos'):
+                    delattr(item, 'initial_drag_pos')
+                    
         if hasattr(self, 'initial_pos') and self.pos() != self.initial_pos:
             # Trova la MainWindow per accedere al command_manager
             main_window = None
@@ -261,7 +324,6 @@ class MusicItem(QGraphicsRectItem):
 
         self.drag_start = None
         super().mouseReleaseEvent(event)
-        
     
     def hoverEnterEvent(self, event):
         """Chiamato quando il mouse entra nell'item"""
