@@ -1,4 +1,6 @@
 # tests/test_main_window.py
+from tests.ui import BaseTest, patch
+
 class MainWindowTest(BaseTest):
     def test_menu_actions(self):
         """Test azioni menu"""

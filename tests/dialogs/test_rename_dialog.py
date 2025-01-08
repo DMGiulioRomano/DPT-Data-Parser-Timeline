@@ -1,5 +1,6 @@
 # tests/dialogs/test_rename_dialog.py  
-from dialogs import BaseTest, QTest, RenameDialog
+from tests.dialogs import BaseTest, QTest
+from src.RenameDialog import RenameDialog
 
 class RenameDialogTest(BaseTest):
     def test_dialog_validation(self):

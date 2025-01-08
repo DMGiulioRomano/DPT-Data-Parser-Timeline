@@ -1,8 +1,8 @@
 # tests/commands/test_commands.py
-from commands import (
-    BaseTest, QTest, patch,
-    MoveItemCommand, CommandManager, MusicItem
-)
+from tests.commands import BaseTest, QTest, QPointF
+from src.Commands import MoveItemCommand, CommandManager
+from src.MusicItem import MusicItem
+
 class CommandsTest(BaseTest):
     """Test del sistema di comandi"""
     def setUp(self):

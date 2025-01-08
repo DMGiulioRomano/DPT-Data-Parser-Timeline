@@ -1,12 +1,11 @@
 # tests/timeline/test_track_header.py
-from timeline import (
+from tests.timeline import (
     BaseTest,
-    TrackHeaderItem,
     Qt,
     QMouseEvent, QKeyEvent, QEvent,
     QPointF
 )
-
+from src.TrackHeaderView import TrackHeaderItem
 class TrackHeaderTest(BaseTest):
     def setUp(self):
         super().setUp()

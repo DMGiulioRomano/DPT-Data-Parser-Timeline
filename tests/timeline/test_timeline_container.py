@@ -1,10 +1,9 @@
 # tests/timeline/test_timeline_container.py
-from timeline import (
+from tests.timeline import (
     BaseTest,
-    TimelineContainer,
     Qt, QTest
 )
-
+from src.TimelineContainer import TimelineContainer
 class TimelineContainerTest(BaseTest):
     def test_ruler_update(self):
         """Test aggiornamento ruler"""

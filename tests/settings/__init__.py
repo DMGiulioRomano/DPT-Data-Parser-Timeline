@@ -3,12 +3,12 @@ from tests import (
     # Test utilities
     BaseTest, QTest, patch,
     # PyQt components
-    Qt, QColor,
-    # Python standard
-    json, os
+    Qt, QColor
 )
-from src import Settings, SettingsDialog
-
+import json
+import os
+from src.Settings import Settings
+from src.SettingsDialog import SettingsDialog
 __all__ = [
     # Test utilities
     'BaseTest',
@@ -21,9 +21,5 @@ __all__ = [
     
     # Python standard
     'json',
-    'os',
-    
-    # App components
-    'Settings',
-    'SettingsDialog'
+    'os'
 ]

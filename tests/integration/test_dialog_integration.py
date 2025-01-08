@@ -1,5 +1,5 @@
 # tests/integration/test_dialog_integration.py
-from integration import (
+from tests.integration import (
     BaseTest, 
     ParamDialog, SettingsDialog,
     TrackItem, Qt,

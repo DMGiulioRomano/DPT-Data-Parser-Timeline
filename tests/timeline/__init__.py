@@ -5,14 +5,7 @@ from tests import (
     # PyQt components
     Qt, QPointF, QRectF, QColor,
     QGraphicsItem, QGraphicsTextItem,
-    QMouseEvent, QKeyEvent, QEvent
-)
-from src import (
-    Timeline, TrackItem,
-    MusicItem, 
-    TimelineView,
-    TimelineRuler,
-    TimelineContainer
+    QMouseEvent, QKeyEvent, QEvent, QTimer
 )
 
 __all__ = [

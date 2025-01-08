@@ -1,7 +1,6 @@
 # tests/settings/test_settings_dialog.py
-from settings import (
+from tests.settings import (
     BaseTest,
-    SettingsDialog,
     Qt, QColor
 )
 

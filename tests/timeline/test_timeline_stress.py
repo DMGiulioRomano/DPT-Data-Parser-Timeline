@@ -1,8 +1,8 @@
 # tests/timeline/test_stress.py
-from timeline import (
-    BaseTest,
-    MusicItem
+from tests.timeline import (
+    BaseTest
 )
+from src.MusicItem import MusicItem
 class StressTest(BaseTest):
     def test_rapid_operations(self):
         """Test operazioni rapide"""

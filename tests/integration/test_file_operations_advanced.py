@@ -1,5 +1,5 @@
 # tests/integration/test_file_operations_advanced.py
-from integration import (
+from tests.integration import (
     BaseTest, patch,
     MusicItem, QMessageBox,
     QCloseEvent,

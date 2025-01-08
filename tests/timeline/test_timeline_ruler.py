@@ -1,10 +1,9 @@
 # tests/timeline/test_timeline_ruler.py
-from timeline import (
+from tests.timeline import (
     BaseTest,
-    TimelineRuler,
-    Qt,
     QGraphicsTextItem
 )
+from src.TimelineRuler import TimelineRuler
 
 class TimelineRulerTest(BaseTest):
     def setUp(self):

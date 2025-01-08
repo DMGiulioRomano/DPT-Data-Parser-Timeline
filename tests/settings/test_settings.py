@@ -1,7 +1,6 @@
 # tests/settings/test_settings.py
-from settings import (
+from tests.settings import (
     BaseTest, patch,
-    Settings,
     json, os
 )
 

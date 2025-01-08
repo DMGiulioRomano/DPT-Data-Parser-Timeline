@@ -1,5 +1,5 @@
 # tests/performance/test_performance_edge_case.py
-from performance import (
+from tests.performance import (
     BaseTest,
     time,
     QPointF

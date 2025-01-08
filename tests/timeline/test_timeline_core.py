@@ -1,10 +1,9 @@
 # tests/timeline/test_timeline_core.py
-from timeline import (
-    BaseTest,
-    Timeline,
-    MusicItem
+from tests.timeline import (
+    BaseTest
 )
-
+from src.Timeline import Timeline
+from src.MusicItem import MusicItem
 class TimelineCoreTest(BaseTest):
     """Test delle funzionalità core della timeline"""
     

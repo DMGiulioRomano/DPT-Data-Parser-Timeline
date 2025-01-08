@@ -1,9 +1,10 @@
 # tests/dialogs/test_param_dialog.py
-from dialogs import (
+from tests.dialogs import (
     BaseTest, QTest, patch,  
     QEvent, QKeyEvent, QColor, Qt,
-    ParamDialog, DEFAULT_PARAMS
+    DEFAULT_PARAMS
 )
+from src.ParamDialog import ParamDialog
 
 class ParamDialogTest(BaseTest):
     def test_color_selection(self):

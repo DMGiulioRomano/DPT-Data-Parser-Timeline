@@ -1,9 +1,11 @@
 # tests/dialogs/test_dialogs.py
-from dialogs import (
+from tests.dialogs import (
     BaseTest, QTest, patch,
-    ParamDialog, RenameDialog, DEFAULT_PARAMS,
+    DEFAULT_PARAMS,
     QColor
 )
+from src.ParamDialog import ParamDialog
+from src.RenameDialog import RenameDialog
 
 class DialogTest(BaseTest):
     def test_param_dialog(self):

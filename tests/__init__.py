@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtTest import QTest
+import sys
+from pathlib import Path
 
 __all__ = [
     # Classi base e utilities per i test
@@ -35,5 +37,8 @@ __all__ = [
     'QBrush',
     'QFont',
     'QKeyEvent',
-    'QMouseEvent'
+    'QMouseEvent',
+    'QTimer'
 ]
+
+sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))

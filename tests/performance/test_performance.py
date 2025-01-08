@@ -1,5 +1,5 @@
 # tests/performance/test_performance.py
-from performance import (
+from tests.performance import (
     BaseTest,
     psutil,
     os,

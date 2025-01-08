@@ -1,10 +1,11 @@
 # tests/timeline/test_timeline_specific_behavior.py
-from timeline import (
+from tests.timeline import (
     BaseTest,
-    MusicItem,
     Qt, QTest,
     patch
 )
+from src.MusicItem import MusicItem
+
 class SpecificBehaviorTest(BaseTest):
     def test_multi_monitor_support(self):
         """Test comportamento su setup multi-monitor"""

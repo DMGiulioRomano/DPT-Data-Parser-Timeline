@@ -1,9 +1,8 @@
 # tests/timeline/test_edge_cases.py
-from timeline import (
+from tests.timeline import (
     BaseTest,
-    QPointF,
-    MusicItem
 )
+from src.MusicItem import MusicItem
 import yaml  # Questa importazione esterna è necessaria per test YAML
 class EdgeCasesTest(BaseTest):
     def test_invalid_file_load(self):

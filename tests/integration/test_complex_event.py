@@ -1,7 +1,6 @@
 # tests/integration/test_complex_event.py
-from integration import (
+from tests.integration import (
     BaseTest, 
-    MusicItem,
     QPointF
 )
 

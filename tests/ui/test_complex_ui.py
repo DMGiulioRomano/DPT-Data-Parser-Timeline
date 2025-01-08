@@ -1,3 +1,7 @@
+from tests.ui import BaseTest
+
+
+
 class ComplexUITest(BaseTest):
     def test_multi_view_interaction(self):
         """Test interazioni multiple viste"""

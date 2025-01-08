@@ -1,5 +1,5 @@
 # tests/integration/test_view_sync.py
-from integration import (
+from tests.integration import (
     BaseTest,
     MusicItem,
     TrackItem,

@@ -1,0 +1,55 @@
+.
+├── LICENSE
+├── README.md
+├── docs
+│   ├── README.md
+│   └── dpt-manual.html
+├── icon.icns
+├── icon.iconset
+│   ├── icon_128x128.png
+│   ├── icon_128x128@2x.png
+│   ├── icon_16x16.png
+│   ├── icon_16x16@2x.png
+│   ├── icon_256x256.png
+│   ├── icon_256x256@2x.png
+│   ├── icon_32x32.png
+│   ├── icon_32x32@2x.png
+│   ├── icon_512x512.png
+│   └── icon_512x512@2x.png
+├── src
+│   ├── Commands.py
+│   ├── MainWindow.py
+│   ├── MusicItem.py
+│   ├── ParamDialog.py
+│   ├── RenameDialog.py
+│   ├── Settings.py
+│   ├── SettingsDialog.py
+│   ├── Timeline.py
+│   ├── TimelineContainer.py
+│   ├── TimelineRuler.py
+│   ├── TimelineView.py
+│   ├── TrackHeaderView.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── dmg_settings.py
+│   ├── main.py
+│   ├── newTimelineView.py
+│   ├── settings.json
+│   └── setup.py
+├── test
+│   └── sezione1.yaml
+├── tests
+│   ├── README.md
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── base_test.py
+│   ├── commands
+│   ├── dialogs
+│   ├── integration
+│   ├── performance
+│   ├── settings
+│   ├── timeline
+│   └── ui
+└── treeTest.txt
+
+15 directories, 38 files

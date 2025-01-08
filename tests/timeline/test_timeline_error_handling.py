@@ -1,9 +1,9 @@
 # tests/timeline/test_error_handling.py
-from timeline import (
-    BaseTest,
-    Timeline,
-    MusicItem
+from tests.timeline import (
+    BaseTest
 )
+from src.Timeline import Timeline
+from src.MusicItem import MusicItem
 import yaml  # Per gestione errori YAML
 
 class ErrorHandlingTest(BaseTest):

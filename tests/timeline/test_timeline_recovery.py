@@ -1,9 +1,10 @@
 # tests/timeline/test_timeline_recovery.py
-from timeline import (
-    BaseTest,
-    MusicItem,
-    Timeline
+from tests.timeline import (
+    BaseTest
 )
+from src.Timeline import Timeline
+from src.MusicItem import MusicItem
+
 import yaml  # Per test recupero YAML
 
 class RecoveryTest(BaseTest):

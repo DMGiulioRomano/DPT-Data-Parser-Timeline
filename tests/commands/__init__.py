@@ -1,15 +1,10 @@
 # tests/commands/__init__.py
-from tests import BaseTest, QTest, patch
-from src import MoveItemCommand, CommandManager, MusicItem
+from tests import BaseTest, QTest, patch, QPointF
 
 __all__ = [
     # Test utilities
     'BaseTest',
     'QTest',
     'patch',
-    
-    # Source components
-    'MoveItemCommand', 
-    'CommandManager', 
-    'MusicItem'
+    'QPointF'
 ]

@@ -1,11 +1,10 @@
 # tests/timeline/test_music_items.py
-from timeline import (
+from tests.timeline import (
     BaseTest,
-    MusicItem,
-    Qt, QPointF, QColor,
-    QMouseEvent, QKeyEvent
-)
+    QColor
 
+)
+from src.MusicItem import MusicItem
 class MusicItemTest(BaseTest):
     """Test specifici per gli item musicali"""
 

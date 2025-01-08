@@ -1,5 +1,5 @@
 # tests/integration/test_event_handling_complex.py
-from integration import (
+from tests.integration import (
     BaseTest,
     MusicItem,
     QPointF

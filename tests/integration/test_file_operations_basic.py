@@ -1,5 +1,5 @@
 # tests/integration/test_file_operations_basic.py
-from integration import (
+from tests.integration import (
     BaseTest,
     MusicItem,
     tempfile, os

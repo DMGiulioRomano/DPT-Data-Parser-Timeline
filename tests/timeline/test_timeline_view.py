@@ -1,11 +1,11 @@
 # tests/timeline/test_timeline_view.py
-from timeline import (
+from tests.timeline import (
     BaseTest,
-    TimelineView,
-    Qt, QTest,
+    Qt,
     QTimer, QPointF, QRectF,
     QKeyEvent, QEvent
 )
+from src.TimelineView import TimelineView
 
 class TimelineViewTest(BaseTest):
     def test_zoom_timeout(self):

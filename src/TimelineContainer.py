@@ -1,9 +1,9 @@
 # Nuovo file: TimelineContainer.py
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QGraphicsView, QSplitter
 from PyQt5.QtCore import Qt, QTimer
-from TimelineView import TimelineView
-from TrackHeaderView import TrackHeaderView
-from TimelineRuler import TimelineRuler
+from .TimelineView import TimelineView
+from .TrackHeaderView import TrackHeaderView
+from .TimelineRuler import TimelineRuler
 
 
 class TimelineRulerView(QGraphicsView):

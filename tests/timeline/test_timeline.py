@@ -1,11 +1,9 @@
 # tests/timeline/test_timeline.py
-from timeline import (
-    BaseTest,
-    Timeline,
-    TrackItem,
-    MusicItem
+from tests.timeline import (
+    BaseTest
 )
-
+from src.Timeline import Timeline
+from src.MusicItem import MusicItem
 class TimelineTest(BaseTest):
     def test_scene_rect_update(self):
         """Test aggiornamento dimensioni scena"""

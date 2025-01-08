@@ -1,7 +1,6 @@
 # tests/test_ui_interaction.py
-from base_test import BaseTest
-from PyQt5.QtCore import Qt
-from PyQt5.QtTest import QTest
+from tests.ui import BaseTest, QTest, Qt
+
 
 class UIInteractionTest(BaseTest):
     """Test delle interazioni UI"""

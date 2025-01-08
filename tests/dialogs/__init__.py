@@ -4,9 +4,6 @@ from tests import (
     QEvent, QKeyEvent, QColor, 
     QMessageBox, Qt
 )
-from ParamDialog import ParamDialog
-from RenameDialog import RenameDialog
-from SettingsDialog import SettingsDialog
 
 # Constants per i test dei dialoghi
 DEFAULT_PARAMS = {
@@ -24,13 +21,7 @@ __all__ = [
     'QKeyEvent',
     'QColor',
     'QMessageBox',
-    'Qt',
-    
-    # Source components
-    'ParamDialog',
-    'RenameDialog',
-    'SettingsDialog',
-    
+    'Qt',    
     # Constants
     'DEFAULT_PARAMS'
 ]
