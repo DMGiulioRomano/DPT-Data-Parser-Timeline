@@ -1,6 +1,7 @@
 # tests/base_test.py
 import unittest
 from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import Qt
 import sys
 from MainWindow import MainWindow
 
