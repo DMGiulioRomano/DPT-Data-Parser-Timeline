@@ -1,0 +1,34 @@
+# tests/test_settings_dialog.py
+from base_test import BaseTest
+from SettingsDialog import SettingsDialog
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
+
+class SettingsDialogTest(BaseTest):
+    def test_directory_selection(self):
+        """Test selezione directory"""
+        dialog = SettingsDialog(self.window.settings)
+        
+        # Test make directory
+        test_path = "/test/path"
+        dialog.make_dir_edit.setText(test_path)
+        dialog.accept()
+        
+        self.assertEqual(
+            self.window.settings.get('make_directory'),
+            test_path
+        )
+        
+    def test_color_settings(self):
+        """Test impostazioni colori"""
+        dialog = SettingsDialog(self.window.settings)
+        
+        # Test colore testo
+        new_color = QColor(255, 0, 0)
+        dialog.text_color = new_color
+        dialog.accept()
+        
+        self.assertEqual(
+            self.window.settings.get('text_color'),
+            new_color.name()
+        )
