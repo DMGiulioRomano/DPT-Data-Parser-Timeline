@@ -1,0 +1,73 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.9, pytest-7.4.3, pluggy-1.3.0 -- /opt/homebrew/opt/python@3.11/bin/python3.11
+cachedir: .pytest_cache
+hypothesis profile 'default' -> database=DirectoryBasedExampleDatabase(PosixPath('/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/.hypothesis/examples'))
+rootdir: /Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline
+configfile: pytest.ini
+plugins: hypothesis-6.91.0, cov-4.1.0, anyio-3.7.1, sugar-0.9.7
+collecting ... collected 96 items
+
+tests/commands/test_commands.py::CommandsTest::test_command_stack_limit PASSED [  1%]
+tests/commands/test_commands.py::CommandsTest::test_move_command PASSED  [  2%]
+tests/commands/test_commands.py::CommandsTest::test_redo_stack_clear PASSED [  3%]
+tests/dialogs/test_dialogs.py::DialogTest::test_param_dialog FAILED      [  4%]
+tests/dialogs/test_dialogs.py::DialogTest::test_param_validation FAILED  [  5%]
+tests/dialogs/test_dialogs.py::DialogTest::test_rename_dialog FAILED     [  6%]
+tests/dialogs/test_param_dialog.py::ParamDialogTest::test_color_selection PASSED [  7%]
+tests/dialogs/test_param_dialog.py::ParamDialogTest::test_key_events PASSED [  8%]
+tests/dialogs/test_param_dialog.py::ParamDialogTest::test_parameter_list_handling PASSED [  9%]
+tests/dialogs/test_param_dialog.py::ParamDialogTest::test_parameter_validation FAILED [ 10%]
+tests/dialogs/test_rename_dialog.py::RenameDialogTest::test_dialog_validation FAILED [ 11%]
+tests/integration/test_complex_event.py::ComplexEventTest::test_concurrent_operations FAILED [ 12%]
+tests/integration/test_dialog_integration.py::DialogIntegrationTest::test_param_dialog_update_timeline FAILED [ 13%]
+tests/integration/test_dialog_integration.py::DialogIntegrationTest::test_settings_dialog_live_update FAILED [ 14%]
+tests/integration/test_event_handling_complex.py::ComplexEventHandlingTest::test_multi_track_operations PASSED [ 15%]
+tests/integration/test_event_handling_complex.py::ComplexEventHandlingTest::test_undo_redo_complex_operations FAILED [ 16%]
+tests/integration/test_file_operations_advanced.py::AdvancedFileTest::test_autosave_behavior Traceback (most recent call last):
+  File "/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/src/TimelineContainer.py", line 124, in <lambda>
+    lambda value: self.handle_horizontal_scroll(value))
+                  ^^^^
+NameError: cannot access free variable 'self' where it is not associated with a value in enclosing scope
+Fatal Python error: Aborted
+
+Current thread 0x00000001e95c2080 (most recent call first):
+  Garbage-collecting
+  File "/opt/homebrew/Cellar/python@3.11/3.11.9_1/Frameworks/Python.framework/Versions/3.11/lib/python3.11/ast.py", line 50 in parse
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/source.py", line 185 in getstatementrange_ast
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/code.py", line 262 in getsource
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/code.py", line 754 in _getentrysource
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/code.py", line 852 in repr_traceback_entry
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/code.py", line 914 in <listcomp>
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/code.py", line 913 in repr_traceback
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/code.py", line 989 in repr_excinfo
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/_code/code.py", line 701 in getrepr
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/nodes.py", line 486 in _repr_failure_py
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/python.py", line 1833 in repr_failure
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/reports.py", line 362 in from_item_and_call
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/runner.py", line 368 in pytest_runtest_makereport
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_callers.py", line 77 in _multicall
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_manager.py", line 115 in _hookexec
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_hooks.py", line 493 in __call__
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/runner.py", line 224 in call_and_report
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/runner.py", line 133 in runtestprotocol
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/runner.py", line 114 in pytest_runtest_protocol
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_callers.py", line 77 in _multicall
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_manager.py", line 115 in _hookexec
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_hooks.py", line 493 in __call__
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/main.py", line 350 in pytest_runtestloop
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_callers.py", line 77 in _multicall
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_manager.py", line 115 in _hookexec
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_hooks.py", line 493 in __call__
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/main.py", line 325 in _main
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/main.py", line 271 in wrap_session
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/main.py", line 318 in pytest_cmdline_main
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_callers.py", line 77 in _multicall
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_manager.py", line 115 in _hookexec
+  File "/opt/homebrew/lib/python3.11/site-packages/pluggy/_hooks.py", line 493 in __call__
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/config/__init__.py", line 169 in main
+  File "/opt/homebrew/lib/python3.11/site-packages/_pytest/config/__init__.py", line 192 in console_main
+  File "/opt/homebrew/lib/python3.11/site-packages/pytest/__main__.py", line 5 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 198 in _run_module_as_main
+
+Extension modules: PyQt5.QtCore, PyQt5.QtGui, PyQt5.QtWidgets, PyQt5.QtTest, yaml._yaml, psutil._psutil_osx, psutil._psutil_posix (total: 7)

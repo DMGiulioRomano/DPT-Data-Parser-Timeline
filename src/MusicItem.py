@@ -3,8 +3,8 @@ from PyQt5.QtGui import QPen, QColor
 from PyQt5.QtWidgets import (
     QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
 )
-from .ParamDialog import ParamDialog
-from .Commands import MoveItemCommand
+from src.ParamDialog import ParamDialog
+from src.Commands import MoveItemCommand
 
 
 class MusicItem(QGraphicsRectItem):

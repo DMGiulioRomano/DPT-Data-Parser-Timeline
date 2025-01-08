@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QRectF
 from PyQt5.QtGui import QPen, QColor, QBrush, QFont, QPainter
-from .Timeline import MIN_SCENE_HEIGHT
+from src.Timeline import MIN_SCENE_HEIGHT
 
 class EditableTextItem(QGraphicsTextItem):
     """Testo editabile per l'header della traccia"""

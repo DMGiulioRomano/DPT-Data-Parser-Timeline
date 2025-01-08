@@ -1,9 +1,8 @@
-# Nuovo file: TimelineContainer.py
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QGraphicsView, QSplitter
 from PyQt5.QtCore import Qt, QTimer
-from .TimelineView import TimelineView
-from .TrackHeaderView import TrackHeaderView
-from .TimelineRuler import TimelineRuler
+from src.TimelineView import TimelineView
+from src.TrackHeaderView import TrackHeaderView
+from src.TimelineRuler import TimelineRuler
 
 
 class TimelineRulerView(QGraphicsView):
@@ -32,6 +31,7 @@ class TimelineRulerView(QGraphicsView):
         if isinstance(self.scene(), TimelineRuler):
             self.scene().update_zoom(zoom_level)
 
+
 class TimelineContainer(QWidget):
     """
     Container principale che gestisce il layout dell'intera timeline,
@@ -39,41 +39,64 @@ class TimelineContainer(QWidget):
     """
     def __init__(self, scene):
         super().__init__()
-        self.scene = scene
-        self.timeline_view = None
-        self.track_header_view = TrackHeaderView()
-        self.timeline_view = TimelineView(self.scene)
-        self.track_header_view.set_timeline_view(self.timeline_view)
+        self._scene = scene
+        self._timeline_view = None
+        self._track_header_view = TrackHeaderView()
+        self._timeline_view = TimelineView(self._scene)
+        self._track_header_view.set_timeline_view(self._timeline_view)
+        self._ruler_view = None
+        self._ruler_scene = None
+        
         # Imposta dimensioni minime
-        self.track_header_view.setMinimumWidth(80)
-        self.track_header_view.setMaximumWidth(200)  # Nuovo
-        self.timeline_view.setMinimumWidth(50)
-        self.splitter_handle_width = 1  
+        self._track_header_view.setMinimumWidth(80)
+        self._track_header_view.setMaximumWidth(200)
+        self._timeline_view.setMinimumWidth(50)
+        self.splitter_handle_width = 1
+
         self.setup_ui()
         self.setup_connections()
 
-        # Aggiungere qui:
-        if self.scene:
-            self.track_header_view.update_tracks(
-                self.scene.num_tracks,
-                self.scene.track_height
+        # Aggiorna le tracce se la scena esiste
+        if self._scene:
+            self._track_header_view.update_tracks(
+                self._scene.num_tracks,
+                self._scene.track_height
             )
         QTimer.singleShot(0, self.initialize_views)
 
+    @property
+    def scene(self):
+        return self._scene
+
+    @property
+    def timeline_view(self):
+        return self._timeline_view
+
+    @property
+    def track_header_view(self):
+        return self._track_header_view
+
+    @property
+    def ruler_view(self):
+        return self._ruler_view
+
+    @property
+    def ruler_scene(self):
+        return self._ruler_scene
+
     def initialize_views(self):
         """Inizializza e sincronizza le viste dopo la costruzione"""
-        if hasattr(self, 'ruler_view') and self.ruler_view:
-            self.ruler_view.update_zoom(self.scene.zoom_level)
-            self.ruler_view.viewport().update()
+        if self._ruler_view:
+            self._ruler_view.update_zoom(self._scene.zoom_level)
+            self._ruler_view.viewport().update()
             
         # Sincronizza lo scroll orizzontale
-        if hasattr(self, 'timeline_view') and self.timeline_view:
-            current_scroll = self.timeline_view.horizontalScrollBar().value()
-            self.ruler_view.horizontalScrollBar().setValue(current_scroll)
+        if self._timeline_view:
+            current_scroll = self._timeline_view.horizontalScrollBar().value()
+            self._ruler_view.horizontalScrollBar().setValue(current_scroll)
 
-        self.timeline_view.verticalScrollBar().setValue(0)  
-        self.track_header_view.verticalScrollBar().setValue(0)
-
+        self._timeline_view.verticalScrollBar().setValue(0)  
+        self._track_header_view.verticalScrollBar().setValue(0)
 
     def setup_ui(self):
         # Layout principale
@@ -81,55 +104,58 @@ class TimelineContainer(QWidget):
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Prima creiamo la timeline view
-        # 1. Ruler Section
-        if self.scene:
+        if self._scene:
             ruler_container = self.create_ruler_section()
             main_layout.addWidget(ruler_container)
 
-            # 2. Timeline Section (Headers + Timeline)
             timeline_container = self.create_timeline_section()
             main_layout.addWidget(timeline_container)
 
     def setup_connections(self):
         """Configura le connessioni tra i vari componenti"""
         # Sincronizzazione scroll verticale
-        self.timeline_view.verticalScrollBar().valueChanged.connect(
-            self.track_header_view.verticalScrollBar().setValue)
-        self.track_header_view.verticalScrollBar().valueChanged.connect(
-            self.timeline_view.verticalScrollBar().setValue)
+        self._timeline_view.verticalScrollBar().valueChanged.connect(
+            lambda value: self.track_header_view.verticalScrollBar().setValue(value) if self.track_header_view else None)
+        if self.track_header_view:
+            self.track_header_view.verticalScrollBar().valueChanged.connect(
+                self._timeline_view.verticalScrollBar().setValue)
 
-        def handle_horizontal_scroll(value):
-            if hasattr(self, 'ruler_view') and self.ruler_view:
-                self.ruler_view.horizontalScrollBar().setValue(value)
-                # Forza l'aggiornamento del viewport
-                self.ruler_view.viewport().update()
-            self.track_header_view.viewport().update()
-            
-        self.timeline_view.horizontalScrollBar().valueChanged.connect(handle_horizontal_scroll)
+        self._timeline_view.horizontalScrollBar().valueChanged.connect(
+            lambda value: self.handle_horizontal_scroll(value))
 
-        if self.scene:
-            self.scene.sceneRectChanged.connect(lambda: 
-                self.ruler_scene.update_width() if hasattr(self, 'ruler_scene') else None)
+        if self._scene:
+            self._scene.sceneRectChanged.connect(lambda: 
+                self._ruler_scene.update_width() if self._ruler_scene else None)
         
         splitter = self.findChild(QSplitter)
         if splitter:
             splitter.splitterMoved.connect(self.on_splitter_moved)
 
         # Forza un aggiornamento iniziale dopo un breve delay
-        QTimer.singleShot(100, lambda: self.ruler_view.update_zoom(self.scene.zoom_level) if hasattr(self, 'ruler_view') else None)
+        QTimer.singleShot(100, lambda: 
+            self._ruler_view.update_zoom(self._scene.zoom_level) if self._ruler_view else None)
 
+    def handle_horizontal_scroll(self, value):
+        ruler_view = getattr(self, '_ruler_view', None)  # Accesso più sicuro
+        if ruler_view:
+            ruler_view.horizontalScrollBar().setValue(value)
+            ruler_view.viewport().update()
+        track_header_view = getattr(self, 'track_header_view', None)
+        if track_header_view:
+            track_header_view.viewport().update()
 
     def update_zoom(self, zoom_level):
         """Aggiorna lo zoom del ruler quando cambia nella timeline"""
-        self.ruler_view.scene().update_zoom(zoom_level)
+        if self._ruler_view:
+            self._ruler_view.scene().update_zoom(zoom_level)
 
     def update_track_headers(self):
         """Aggiorna gli header quando cambiano le tracce"""
-        self.track_header_view.update_tracks(
-            self.scene.num_tracks,
-            self.scene.track_height
-        )
+        if self.track_header_view:
+            self.track_header_view.update_tracks(
+                self._scene.num_tracks,
+                self._scene.track_height
+            )
 
     def create_ruler_section(self):
         ruler_container = QWidget()
@@ -137,23 +163,24 @@ class TimelineContainer(QWidget):
         ruler_layout.setSpacing(0)
         ruler_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Header spacer ha la stessa larghezza del track header
+        # Header spacer con stessa larghezza del track header
         self.header_spacer = QWidget()
-        initial_width = self.track_header_view.width() + self.splitter_handle_width
+        initial_width = self._track_header_view.width() + self.splitter_handle_width
         self.header_spacer.setFixedWidth(initial_width)
         ruler_layout.addWidget(self.header_spacer)
 
-        self.ruler_scene = TimelineRuler(self.scene.settings, self.scene)
-        self.ruler_view = TimelineRulerView(self.ruler_scene, self.timeline_view) 
-        # Imposta margini e contenuti a zero per allineamento preciso
-        self.ruler_view.setViewportMargins(0, 0, 0, 0)
-        self.ruler_view.setContentsMargins(0, 0, 0, 0)
-        self.ruler_view.viewport().setContentsMargins(0, 0, 0, 0)
+        self._ruler_scene = TimelineRuler(self._scene.settings, self._scene)
+        self._ruler_view = TimelineRulerView(self._ruler_scene, self._timeline_view)
         
-        ruler_layout.addWidget(self.ruler_view)
+        # Imposta margini e contenuti a zero per allineamento preciso
+        self._ruler_view.setViewportMargins(0, 0, 0, 0)
+        self._ruler_view.setContentsMargins(0, 0, 0, 0)
+        self._ruler_view.viewport().setContentsMargins(0, 0, 0, 0)
+        
+        ruler_layout.addWidget(self._ruler_view)
 
         # Forza l'aggiornamento dopo la creazione
-        QTimer.singleShot(0, lambda: self.ruler_view.viewport().update())
+        QTimer.singleShot(0, lambda: self._ruler_view.viewport().update())
 
         return ruler_container
 
@@ -166,9 +193,9 @@ class TimelineContainer(QWidget):
 
         # Crea splitter e aggiungi le view
         splitter = QSplitter(Qt.Horizontal)
-        splitter.setHandleWidth(self.splitter_handle_width) 
-        splitter.addWidget(self.track_header_view)
-        splitter.addWidget(self.timeline_view)
+        splitter.setHandleWidth(self.splitter_handle_width)
+        splitter.addWidget(self._track_header_view)
+        splitter.addWidget(self._timeline_view)
         
         timeline_layout.addWidget(splitter)
         return timeline_container
@@ -176,16 +203,6 @@ class TimelineContainer(QWidget):
     def on_splitter_moved(self, pos, index):
         """Gestisce il movimento dello splitter"""
         self.header_spacer.setFixedWidth(pos)
-        if hasattr(self, 'track_header_view'):
-            # Forza l'aggiornamento della larghezza degli header
+        if self.track_header_view:
             self.track_header_view.current_width = pos
             self.track_header_view.update_tracks_width()
-
-    def get_timeline_view(self):
-        return self.timeline_view
-
-    def get_ruler_view(self):
-        return self.ruler_view
-
-    def get_track_header_view(self):
-        return self.track_header_view

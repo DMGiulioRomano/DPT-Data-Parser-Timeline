@@ -9,15 +9,15 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QKeySequence  # Nuovo import
 
-from .Timeline import *
-from .TimelineView import TimelineView
-from .RenameDialog import RenameDialog
-from .MusicItem import MusicItem
-from .Settings import Settings
-from .SettingsDialog import SettingsDialog
-from .Commands import CommandManager
-from .TimelineContainer import TimelineContainer
-from .TrackHeaderView import TrackHeaderItem
+from src.Timeline import *
+from src.TimelineView import TimelineView
+from src.RenameDialog import RenameDialog
+from src.MusicItem import MusicItem
+from src.Settings import Settings
+from src.SettingsDialog import SettingsDialog
+from src.Commands import CommandManager
+from src.TimelineContainer import TimelineContainer
+from src.TrackHeaderView import TrackHeaderItem
 
 class MainWindow(QMainWindow):
     def __init__(self):
