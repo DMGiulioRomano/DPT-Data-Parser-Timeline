@@ -1,8 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QGraphicsView, QSplitter
 from PyQt5.QtCore import Qt, QTimer
-from src.TimelineView import TimelineView
-from src.TrackHeaderView import TrackHeaderView
-from src.TimelineRuler import TimelineRuler
+
+from TimelineView import TimelineView
+from TrackHeaderView import TrackHeaderView
+from TimelineRuler import TimelineRuler
+
+#from src.TimelineView import TimelineView
+#from src.TrackHeaderView import TrackHeaderView
+#from src.TimelineRuler import TimelineRuler
 
 
 class TimelineRulerView(QGraphicsView):
@@ -121,7 +126,7 @@ class TimelineContainer(QWidget):
                 self._timeline_view.verticalScrollBar().setValue)
 
         self._timeline_view.horizontalScrollBar().valueChanged.connect(
-            lambda value: self.handle_horizontal_scroll(value))
+            self.handle_horizontal_scroll)
 
         if self._scene:
             self._scene.sceneRectChanged.connect(lambda: 

@@ -6,7 +6,8 @@ from PyQt5.QtWidgets import (
     QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItem,
     QApplication
 )
-from src.MusicItem import MusicItem
+from MusicItem import MusicItem
+#from src.MusicItem import MusicItem
 
 MIN_SCENE_HEIGHT = 600  # Sposta qui la costante
 

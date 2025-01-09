@@ -9,16 +9,27 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QKeySequence  # Nuovo import
 
+from Timeline import *
+from TimelineView import TimelineView
+from RenameDialog import RenameDialog
+from MusicItem import MusicItem
+from Settings import Settings
+from SettingsDialog import SettingsDialog
+from Commands import CommandManager, ResizeItemCommand,SetPosCommand
+from TimelineContainer import TimelineContainer
+from TrackHeaderView import TrackHeaderItem
+
+"""
 from src.Timeline import *
 from src.TimelineView import TimelineView
 from src.RenameDialog import RenameDialog
 from src.MusicItem import MusicItem
 from src.Settings import Settings
 from src.SettingsDialog import SettingsDialog
-from src.Commands import CommandManager
+from src.Commands import CommandManager, ResizeItemCommand,SetPosCommand
 from src.TimelineContainer import TimelineContainer
 from src.TrackHeaderView import TrackHeaderItem
-
+"""
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -370,7 +381,13 @@ class MainWindow(QMainWindow):
                 if isinstance(item, TrackItem):
                     self.scene.delete_track(item.track_number)
                     break
-            
+
+    def set_item_pos(self, item, new_pos):
+        old_pos = item.pos()
+        command = SetPosCommand(item, old_pos, new_pos)
+        self.command_manager.execute(command)
+
+
     def sort_items_by_attack(self, items):
         return sorted(items, key=lambda x: float(x['cAttacco']))
 
@@ -391,8 +408,8 @@ class MainWindow(QMainWindow):
             
             self.scene.clear()
             self.scene.draw_tracks()
-            self.timeline_container.ruler_view.updateColors()
-            self.timeline_container.ruler_view.draw_ruler()
+            self.timeline_container.ruler_scene.updateColors()
+            self.timeline_container.ruler_scene.draw_ruler()
             
             for item_data in stored_items:
                 item = MusicItem(0, 0, item_data['width'], item_data['name'], 
@@ -466,14 +483,18 @@ class MainWindow(QMainWindow):
                     item.setPos(new_x, track_y)
                     item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
 
-
     def modify_item_width(self, scale_factor):
-        for item in self.scene.selectedItems():
+        items = self.scene.selectedItems()
+        if not items:
+            return
+
+        for item in items:
             if isinstance(item, MusicItem):
-                new_width = item.rect().width() * scale_factor
-                item.params['durata'] = round(new_width / (self.scene.pixels_per_beat * self.scene.zoom_level), 3)
-                item.setRect(0, 0, new_width, item.rect().height())
-                item.text.setPos(5, 10)
+                old_width = item.rect().width()
+                new_width = old_width * scale_factor
+
+                command = ResizeItemCommand(item, old_width, new_width)
+                self.command_manager.execute(command)
 
     def new_file(self):
         self.current_file = None

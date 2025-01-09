@@ -30,16 +30,17 @@ class ComplexEventHandlingTest(BaseTest):
         """Test undo/redo operazioni complesse"""
         # Crea una sequenza di operazioni
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
-        
+
+        item.setSelected(True)
+        initial_state = (item.pos(), item.rect().width())
+
         operations = [
             lambda: self.window.move_selected_items(1),
             lambda: self.window.modify_item_width(1.2),
-            lambda: item.setPos(item.pos() + QPointF(0, self.timeline.track_height))
+            lambda: self.window.set_item_pos(item, item.pos() + QPointF(0, self.timeline.track_height))
         ]
         
         # Esegui operazioni
-        item.setSelected(True)
-        initial_state = (item.pos(), item.rect().width())
         
         for op in operations:
             op()

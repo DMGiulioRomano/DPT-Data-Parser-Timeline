@@ -7,13 +7,14 @@ from tests.integration import (
 class ComplexEventTest(BaseTest):
     def test_concurrent_operations(self):
         """Test operazioni concorrenti"""
-        # Simula operazioni simultanee
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
         
-        # Muovi e scala contemporaneamente
+        initial_width = item.rect().width()
         item.setPos(item.pos() + QPointF(100,0))
+        
+        # Seleziona l'item prima di modificarne la larghezza
+        item.setSelected(True)
         self.window.modify_item_width(1.5)
         
-        # Verifica che entrambe le operazioni abbiano effetto
         self.assertNotEqual(item.pos().x(), 0)
-        self.assertGreater(item.rect().width(), 300)
+        self.assertAlmostEqual(item.rect().width(), initial_width * 1.5, places=1)

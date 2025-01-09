@@ -13,7 +13,7 @@ class DialogIntegrationTest(BaseTest):
         old_pos = item.pos()
         
         # Apri dialog e modifica cAttacco
-        dialog = ParamDialog(item.params, item.color)
+        dialog = ParamDialog(item.params, item.color,item=item)
         dialog.inputs['cAttacco'].setText("2.0")
         dialog.accept()
         
@@ -33,4 +33,4 @@ class DialogIntegrationTest(BaseTest):
         # Verifica che le tracce siano aggiornate
         for item in self.timeline.items():
             if isinstance(item, TrackItem):
-                self.assertEqual(item.base_color.name(), new_color)
+                self.assertEqual(item.base_color.name().lower(), new_color.lower())

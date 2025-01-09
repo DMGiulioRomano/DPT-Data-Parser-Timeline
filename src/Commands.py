@@ -25,30 +25,31 @@ class CommandManager:
     def __init__(self):
         self._undo_stack: List[Command] = []
         self._redo_stack: List[Command] = []
-        self._max_stack_size = 50  # Limita la dimensione dello stack per gestire la memoria
+        self._max_stack_size = 100  # Limita la dimensione dello stack per gestire la memoria
 
     def execute(self, command: Command):
-        """Execute a new command and add it to the undo stack"""
         command.execute()
         self._undo_stack.append(command)
-        self._redo_stack.clear()  # Svuota lo stack di redo quando viene eseguito un nuovo comando
         
         # Mantiene la dimensione dello stack sotto controllo
         if len(self._undo_stack) > self._max_stack_size:
             self._undo_stack.pop(0)
 
-        # Notifica il cambio di stato dopo l'esecuzione
         self._notify_state_change()
 
     def undo(self):
-        """Undo the last command"""
         if not self._undo_stack:
             return
         command = self._undo_stack.pop()
         command.undo()
         self._redo_stack.append(command)
+
+        # Svuota lo stack di redo solo quando viene eseguito un undo
+        if len(self._redo_stack) > self._max_stack_size:
+            self._redo_stack.pop(0)
+
         self._notify_state_change()
-                
+
     def redo(self):
         """Redo the last undone command"""
         if not self._redo_stack:
@@ -109,3 +110,31 @@ class MoveItemCommand(Command):
         """Ripristina l'item alla posizione precedente"""
         self.item.setPos(self.old_pos)
         self.item.params['cAttacco'] = self.old_attack
+
+class ResizeItemCommand(Command):
+    def __init__(self, item, old_width, new_width):
+        self.item = item
+        self.old_width = old_width
+        self.new_width = new_width
+
+    def execute(self):
+        self.item.setRect(0, 0, self.new_width, self.item.rect().height())
+        self.item.params['durata'] = round(self.new_width / (self.item.scene().pixels_per_beat * self.item.scene().zoom_level), 3)
+        self.item.text.setPos(5, 10)
+
+    def undo(self):
+        self.item.setRect(0, 0, self.old_width, self.item.rect().height())
+        self.item.params['durata'] = round(self.old_width / (self.item.scene().pixels_per_beat * self.item.scene().zoom_level), 3)
+        self.item.text.setPos(5, 10)
+
+class SetPosCommand(Command):
+    def __init__(self, item, old_pos, new_pos):
+        self.item = item
+        self.old_pos = old_pos
+        self.new_pos = new_pos
+
+    def execute(self):
+        self.item.setPos(self.new_pos)
+
+    def undo(self):
+        self.item.setPos(self.old_pos)

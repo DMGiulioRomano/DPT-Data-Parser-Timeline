@@ -229,4 +229,7 @@ class SettingsDialog(QDialog):
         self.settings.set('track_background_color', self.track_color.name())
         self.settings.set('timeline_background_color', self.timeline_color.name())
         self.settings.set('default_track_count', self.default_tracks_spin.value())
+        # Forza il ridisegno delle tracce con il nuovo colore
+        if self.parent() and hasattr(self.parent(), 'timeline_container'):
+            self.parent().timeline_container.timeline_view.scene().draw_tracks()
         super().accept()

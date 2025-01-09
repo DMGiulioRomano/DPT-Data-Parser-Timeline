@@ -3,9 +3,11 @@ from PyQt5.QtGui import QPen, QColor
 from PyQt5.QtWidgets import (
     QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
 )
-from src.ParamDialog import ParamDialog
-from src.Commands import MoveItemCommand
+from ParamDialog import ParamDialog
+from Commands import MoveItemCommand
 
+#from src.ParamDialog import ParamDialog
+#from src.Commands import MoveItemCommand
 
 class MusicItem(QGraphicsRectItem):
     def __init__(self, x, y, width, name="Clip", settings = None, track_height=40):
@@ -28,10 +30,10 @@ class MusicItem(QGraphicsRectItem):
         self.is_hovered = False  # Aggiungi questa riga
         
         self.params = {
-            "cAttacco": 0,
+            "cAttacco": 0.0,
             "durataArmonica": 26,
             "ritmo": [7,15],
-            "durata": 5,
+            "durata": 5.0,
             "ampiezza": [-30,-0.25],
             "frequenza": [6,1],
             "posizione": -8
@@ -85,77 +87,12 @@ class MusicItem(QGraphicsRectItem):
         self.showParamDialog()
 
     def showParamDialog(self):
+        """Mostra il dialog per modificare i parametri dell'item"""
         dialog = ParamDialog(self.params, self.color)
+        dialog.item = self
         if dialog.exec_():
-            for key, input_field in dialog.inputs.items():
-                try:
-                    if isinstance(self.params[key], list):
-                        input_text = input_field.text()
-                        try:
-                            # Preprocessa il testo per gestire valori senza apici
-                            processed_text = input_text
-                            if not (input_text.startswith('[') and input_text.endswith(']')):
-                                processed_text = f"[{input_text}]"
-                            
-                            # Aggiungi apici temporanei alle parole senza apici
-                            import re
-                            def add_quotes(match):
-                                word = match.group(0)
-                                # Non aggiungere apici se è già un numero
-                                try:
-                                    float(word)
-                                    return word
-                                except ValueError:
-                                    return f"'{word}'"
-                            
-                            # Trova parole che contengono lettere e non sono tra apici
-                            processed_text = re.sub(r'[a-zA-Z]\w*(?=[\s,\]]|$)', add_quotes, processed_text)
-                            
-                            # Ora fai il parsing con literal_eval
-                            from ast import literal_eval
-                            parsed_value = literal_eval(processed_text)
-                            
-                            # Convert all numbers to float in the nested structure
-                            def convert_numbers(val):
-                                if isinstance(val, (int, float)):
-                                    return float(val)
-                                elif isinstance(val, str):
-                                    # Rimuovi eventuali apici dalla stringa
-                                    val = val.strip('"\'')
-                                    # Se la stringa contiene lettere, mantienila come stringa raw (senza apici)
-                                    if any(c.isalpha() for c in val):
-                                        return val  # Ritorna la stringa senza apici
-                                    # Altrimenti prova a convertirla in float
-                                    try:
-                                        return float(val)
-                                    except ValueError:
-                                        return val
-                                elif isinstance(val, list):
-                                    return [convert_numbers(x) for x in val]
-                                return val
-                            
-                            processed_value = convert_numbers(parsed_value)
-                            self.params[key] = processed_value
-                            
-                        except (ValueError, SyntaxError) as e:
-                            print(f"Error parsing list value for {key}: {e}")
-                            continue
-                    else:
-                        try:
-                            # Se il valore contiene almeno una lettera, mantienilo come stringa
-                            text_value = input_field.text()
-                            if any(c.isalpha() for c in text_value):
-                                self.params[key] = text_value
-                            else:
-                                self.params[key] = float(text_value)
-                        except ValueError as e:
-                            print(f"Error parsing value for {key}: {e}")
-                            continue
-                        
-                except (ValueError, SyntaxError) as e:
-                    print(f"Error parsing parameter {key}: {e}")
-                    continue
-            
+            # Il dialogo si occupa già di aggiornare i params dell'item
+            # poiché mantiene un riferimento al dizionario originale
             self.color = dialog.color
             self.setBrush(self.color)
             
@@ -171,7 +108,7 @@ class MusicItem(QGraphicsRectItem):
                 self.setPos(new_x, self.pos().y())
                 self.setRect(0, 0, new_width, self.rect().height())
                 self.text.setPos(5, self.rect().height()/4)
-
+                
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionChange and self.scene():
             newPos = value

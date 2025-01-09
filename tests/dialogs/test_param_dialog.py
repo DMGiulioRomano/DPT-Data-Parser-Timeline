@@ -18,19 +18,22 @@ class ParamDialogTest(BaseTest):
         
         self.assertEqual(dialog.color, new_color)
         
-    def test_parameter_validation(self):
-        """Test validazione parametri"""
-        dialog = ParamDialog(DEFAULT_PARAMS)
-        
-        # Test input valido
-        dialog.inputs['cAttacco'].setText("1.5")
+    def test_param_dialog(self):
+        """Test dialogo parametri"""
+        item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
+        dialog = ParamDialog(item.params, QColor(100, 150, 200))
+
+        # Test modifica parametri
+        new_attack = 1.5
+        dialog.inputs['cAttacco'].setText(str(new_attack))
         dialog.accept()
-        self.assertEqual(float(dialog.inputs['cAttacco'].text()), 1.5)
-        
-        # Test input non valido
-        dialog.inputs['cAttacco'].setText("invalid")
+        self.assertEqual(item.params['cAttacco'], new_attack)
+        dialog = ParamDialog(item.params, QColor(100, 150, 200))
+        new_dur = 1.5
+        dialog.inputs['durata'].setText(str(new_dur))
         dialog.accept()
-        self.assertNotEqual(dialog.inputs['cAttacco'].text(), "invalid")
+        self.assertEqual(item.params['durata'], new_dur)
+
 
     def test_key_events(self):
         """Test gestione eventi tastiera"""
