@@ -1,13 +1,13 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSizePolicy, QGraphicsView, QSplitter
 from PyQt5.QtCore import Qt, QTimer
 
-from TimelineView import TimelineView
+"""from TimelineView import TimelineView
 from TrackHeaderView import TrackHeaderView
 from TimelineRuler import TimelineRuler
-
-#from src.TimelineView import TimelineView
-#from src.TrackHeaderView import TrackHeaderView
-#from src.TimelineRuler import TimelineRuler
+"""
+from src.TimelineView import TimelineView
+from src.TrackHeaderView import TrackHeaderView
+from src.TimelineRuler import TimelineRuler
 
 
 class TimelineRulerView(QGraphicsView):
@@ -190,7 +190,6 @@ class TimelineContainer(QWidget):
         return ruler_container
 
     def create_timeline_section(self):
-        """Crea la sezione principale con track headers e timeline"""
         timeline_container = QWidget()
         timeline_layout = QHBoxLayout(timeline_container)
         timeline_layout.setSpacing(0)
@@ -199,8 +198,17 @@ class TimelineContainer(QWidget):
         # Crea splitter e aggiungi le view
         splitter = QSplitter(Qt.Horizontal)
         splitter.setHandleWidth(self.splitter_handle_width)
+        
+        # Imposta le policy prima di aggiungere al splitter
+        self._track_header_view.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        
+        # Aggiungi i widget
         splitter.addWidget(self._track_header_view)
         splitter.addWidget(self._timeline_view)
+        
+        # Imposta i fattori di stretch
+        splitter.setStretchFactor(0, 0)  # header view non si estende
+        splitter.setStretchFactor(1, 1)  # timeline view si estende
         
         timeline_layout.addWidget(splitter)
         return timeline_container

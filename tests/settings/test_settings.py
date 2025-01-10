@@ -3,7 +3,7 @@ from tests.settings import (
     BaseTest, patch,
     json, os
 )
-
+from src.Settings import Settings
 class SettingsTest(BaseTest):
     def setUp(self):
         super().setUp()
@@ -34,10 +34,10 @@ class SettingsTest(BaseTest):
         
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.settings)
         self.assertEqual(
-            item.text.defaultTextColor().name(),
-            new_color
+            item.text.defaultTextColor().name().upper(),
+            new_color.upper()
         )
-
+        
     def test_file_permissions(self):
         """Test permessi file settings"""
         settings = Settings()

@@ -1,12 +1,13 @@
 from PyQt5.QtWidgets import QGraphicsView
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPainter, QPointF
-
+"""
 from MusicItem import MusicItem
 from Timeline import TrackItem
 
-#from src.MusicItem import MusicItem
-#from src.Timeline import TrackItem
+"""
+from src.MusicItem import MusicItem
+from src.Timeline import TrackItem
 
 class TimelineView(QGraphicsView):
     """

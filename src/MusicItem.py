@@ -3,11 +3,12 @@ from PyQt5.QtGui import QPen, QColor
 from PyQt5.QtWidgets import (
     QGraphicsRectItem, QGraphicsTextItem, QGraphicsItem
 )
+"""
 from ParamDialog import ParamDialog
 from Commands import MoveItemCommand
-
-#from src.ParamDialog import ParamDialog
-#from src.Commands import MoveItemCommand
+"""
+from src.ParamDialog import ParamDialog
+from src.Commands import MoveItemCommand
 
 class MusicItem(QGraphicsRectItem):
     def __init__(self, x, y, width, name="Clip", settings = None, track_height=40):
@@ -28,7 +29,8 @@ class MusicItem(QGraphicsRectItem):
         self.track_index = 0  # inizializza
         self.setAcceptHoverEvents(True)  # Aggiungi questa riga
         self.is_hovered = False  # Aggiungi questa riga
-        
+        if settings:
+            self.text.setDefaultTextColor(QColor(settings.get('text_color', '#000000')))        
         self.params = {
             "cAttacco": 0.0,
             "durataArmonica": 26,
@@ -38,6 +40,28 @@ class MusicItem(QGraphicsRectItem):
             "frequenza": [6,1],
             "posizione": -8
         }
+
+    @property
+    def cAttacco(self):
+        return self.params['cAttacco']
+
+    @cAttacco.setter
+    def cAttacco(self, value):
+        self.params['cAttacco'] = value
+        if self.scene():
+            new_x = value * self.scene().pixels_per_beat * self.scene().zoom_level
+            self.setPos(new_x, self.pos().y())
+
+    @property
+    def durata(self):
+        return self.params['durata']
+
+    @durata.setter 
+    def durata(self, value):
+        self.params['durata'] = value
+        if self.scene():
+            new_width = float(value) * self.scene().pixels_per_beat * self.scene().zoom_level
+            self.setRect(0, 0, new_width, self.rect().height())
 
     def updateHeight(self, new_height):
         """

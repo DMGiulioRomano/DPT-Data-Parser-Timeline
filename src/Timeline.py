@@ -6,8 +6,8 @@ from PyQt5.QtWidgets import (
     QGraphicsScene, QGraphicsTextItem, QGraphicsRectItem, QGraphicsItem,
     QApplication
 )
-from MusicItem import MusicItem
-#from src.MusicItem import MusicItem
+#from MusicItem import MusicItem
+from src.MusicItem import MusicItem
 
 MIN_SCENE_HEIGHT = 600  # Sposta qui la costante
 
@@ -57,12 +57,13 @@ class Timeline(QGraphicsScene):
                     container.timeline_view.viewport().update()
 
     def draw_tracks(self):
+        self.clear()
         required_height = (self.num_tracks * self.track_height)
-        current_height = max(required_height, self.min_height)
+        # Rimuovi min_height se num_tracks aumenta oltre il minimo
+        current_height = required_height if required_height > self.min_height else self.min_height
         
         if current_height != self.sceneRect().height():
-            self.setSceneRect(0, 0, self.sceneRect().width(), current_height)
-        
+            self.setSceneRect(0, 0, self.sceneRect().width(), current_height)        
         track_color = self.settings.get('track_background_color', '#F0F0F0')
         
         for i in range(self.num_tracks):
@@ -221,15 +222,15 @@ class Timeline(QGraphicsScene):
     def scale_scene(self, factor):
         self.zoom_level *= factor
         new_width = max(self.min_width * self.zoom_level, self.sceneRect().width())
+        current_height = self.sceneRect().height()
         
-        # Store reference mapping between old and new items
-        item_references = {}
-        
-        # Store item data and selection state before clearing
+        # Memorizza item e riferimenti attuali
         stored_items = []
+        item_map = {}
+        
         for item in self.items():
             if isinstance(item, MusicItem):
-                stored_items.append({
+                item_data = {
                     'params': item.params.copy(),
                     'x': item.pos().x() * factor,
                     'y': item.pos().y(),
@@ -239,49 +240,48 @@ class Timeline(QGraphicsScene):
                     'name': item.name,
                     'settings': item.settings,
                     'original_item': item
-                })
+                }
+                stored_items.append(item_data)
 
-        # Update command manager references if needed
+        # Aggiorna riferimenti nel command manager
         if self.views():
             main_window = self.views()[0].window()
             if hasattr(main_window, 'command_manager'):
                 for command in main_window.command_manager._undo_stack + main_window.command_manager._redo_stack:
                     for item_data in stored_items:
                         if hasattr(command, 'item') and command.item == item_data['original_item']:
-                            # Aggiorniamo anche old_pos e new_pos nel comando
                             command.old_pos = QPointF(command.old_pos.x() * factor, command.old_pos.y())
                             command.new_pos = QPointF(command.new_pos.x() * factor, command.new_pos.y())
                             item_data['command'] = command
 
-        current_height = self.sceneRect().height()
         self.clear()
         self.setSceneRect(0, 0, new_width, current_height)
         self.draw_tracks()
-        
-        # Recreate items with preserved properties
-        for item_data in stored_items:
-            item = MusicItem(0, 0, item_data['width'], item_data['name'], 
-                            item_data['settings'], self.track_height)
-            item.params = item_data['params']
-            item.color = item_data['color']
-            item.setBrush(item_data['color'])
-            item.setPos(item_data['x'], item_data['y'])
-            item.setSelected(item_data['selected'])
-            self.addItem(item)
-            
-            # Update command reference if needed
-            if 'command' in item_data:
-                item_data['command'].item = item
 
-        # Notifica il cambiamento di zoom al TimelineRuler
+        # Ricrea gli item mantenendo i riferimenti
+        for item_data in stored_items:
+            new_item = MusicItem(0, 0, item_data['width'], item_data['name'], 
+                            item_data['settings'], self.track_height)
+            item_map[item_data['original_item']] = new_item
+            new_item.params = item_data['params']
+            new_item.color = item_data['color']
+            new_item.setBrush(item_data['color'])
+            new_item.setPos(item_data['x'], item_data['y'])
+            new_item.setSelected(item_data['selected'])
+            self.addItem(new_item)
+            
+            if 'command' in item_data:
+                item_data['command'].item = new_item
+
+        # Aggiorna il ruler
         if self.views():
             main_window = self.views()[0].window()
             if hasattr(main_window, 'timeline_container'):
                 ruler = main_window.timeline_container.ruler_view.scene()
                 if ruler:
                     ruler.update_zoom(self.zoom_level)
-
-
+                    
+        return item_map
 
     def move_track(self, track_number, direction):
         """
@@ -295,46 +295,51 @@ class Timeline(QGraphicsScene):
         if new_position < 0 or new_position >= self.num_tracks:
             return
 
-        # Raccogli tutti gli item e le loro informazioni per track_number e new_position
-        items_on_tracks = {
-            track_number: [],
-            new_position: []
-        }
-        
-        # Raccogli gli item su entrambe le tracce
+        # Raccogli tutti gli item sulla traccia da spostare e sulla traccia di destinazione
+        items_to_move = []
+        items_on_destination_track = []
         for item in self.items():
             if isinstance(item, MusicItem):
                 current_track = int(item.pos().y() / self.track_height)
-                if current_track in items_on_tracks:
-                    items_on_tracks[current_track].append({
-                        'params': item.params.copy(),
-                        'width': item.rect().width(),
-                        'color': item.color,
-                        'name': item.name,
-                        'settings': item.settings,
-                        'pos_x': item.pos().x()
-                    })
+                if current_track == track_number:
+                    items_to_move.append(item)
+                elif current_track == new_position:
+                    items_on_destination_track.append(item)
 
-        # Pulisci la scena
-        self.clear()
-        self.draw_tracks()
+        # Calcola la nuova posizione y per gli item
+        new_y = new_position * self.track_height
 
-        # Ridisegna gli item scambiando le posizioni y
-        for track, items in items_on_tracks.items():
-            new_y = new_position * self.track_height if track == track_number else track_number * self.track_height
-            for item_data in items:
-                item = MusicItem(0, 0, item_data['width'], item_data['name'], 
-                            item_data['settings'], self.track_height)
-                item.params = item_data['params']
-                item.color = item_data['color']
-                item.setBrush(item_data['color'])
-                item.setPos(item_data['pos_x'], new_y)
-                self.addItem(item)
-                item.updateTextStyle()
+        # Sposta gli item sulla nuova traccia
+        for item in items_to_move:
+            item.setY(new_y)
+            item.track_index = new_position
 
+        # Sposta gli item sulla traccia di destinazione sulla traccia originale
+        original_y = track_number * self.track_height
+        for item in items_on_destination_track:
+            item.setY(original_y)
+            item.track_index = track_number
 
+        # Aggiorna le tracce interessate
+        self.update_track(track_number)
+        self.update_track(new_position)
 
+    def update_track(self, track_number):
+        # Trova la traccia corrispondente al numero di traccia specificato
+        track_item = None
+        for item in self.items():
+            if isinstance(item, TrackItem) and item.track_number == track_number:
+                track_item = item
+                break
 
+        if track_item:
+            # Aggiorna la posizione e le dimensioni della traccia
+            y = track_number * self.track_height
+            track_item.setRect(0, y, self.sceneRect().width(), self.track_height)
+            
+            # Ottieni il colore di base delle tracce dalle impostazioni
+            track_color = self.settings.get('track_background_color', '#F0F0F0')
+            track_item.updateColors(track_color)  # Aggiorna i colori della traccia
 
 class TrackItem(QGraphicsRectItem):
     def __init__(self, x, y, width, height, track_number):

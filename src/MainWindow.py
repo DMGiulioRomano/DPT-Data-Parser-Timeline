@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QFileDialog, QComboBox, QLineEdit, QLabel, QMessageBox, QTextEdit
 )
 from PyQt5.QtGui import QKeySequence  # Nuovo import
-
+"""
 from Timeline import *
 from TimelineView import TimelineView
 from RenameDialog import RenameDialog
@@ -26,10 +26,10 @@ from src.RenameDialog import RenameDialog
 from src.MusicItem import MusicItem
 from src.Settings import Settings
 from src.SettingsDialog import SettingsDialog
-from src.Commands import CommandManager, ResizeItemCommand,SetPosCommand
+from src.Commands import CommandManager, ResizeItemCommand,SetPosCommand, MoveItemCommand
 from src.TimelineContainer import TimelineContainer
 from src.TrackHeaderView import TrackHeaderItem
-"""
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -445,43 +445,30 @@ class MainWindow(QMainWindow):
                 item.setPos(item.pos().x(), new_y)
 
 
-    def move_selected_items(self, direction):
-        """
-        Sposta gli item selezionati orizzontalmente mantenendo la loro traccia corrente
-        Args:
-            direction: -1 per sinistra, 1 per destra
-        """
-        min_grid_size = self.scene.pixels_per_beat / 32
-        grid_size = max(min_grid_size, (self.scene.pixels_per_beat / 16) / self.scene.zoom_level)
-        delta = grid_size * direction
-        
-        selected_items = [item for item in self.scene.selectedItems() if isinstance(item, MusicItem)]
 
-        # Se stiamo muovendo verso destra, permetti sempre il movimento
+    def move_selected_items(self, direction):
+        grid_size = (self.scene.pixels_per_beat / 16) / self.scene.zoom_level
+        delta = grid_size * direction
+        selected_items = [item for item in self.scene.selectedItems() if isinstance(item, MusicItem)]
+        
         if direction > 0:
             for item in selected_items:
-                new_x = max(0, item.pos().x() + delta)
-                current_track = int(item.pos().y() / self.scene.track_height)
+                old_pos = item.pos()
+                new_x = old_pos.x() + delta
+                current_track = int(old_pos.y() / self.scene.track_height)
                 track_y = current_track * self.scene.track_height
-                item.setPos(new_x, track_y)
-                item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
+                new_pos = QPointF(new_x, track_y)
+                command = MoveItemCommand(item, old_pos, new_pos)
+                self.command_manager.execute(command)
         else:
-            # Verifica se qualsiasi item raggiungerebbe zero con questo movimento verso sinistra
-            would_hit_zero = False
             for item in selected_items:
-                proposed_x = item.pos().x() + delta
-                if proposed_x <= 0:
-                    would_hit_zero = True
-                    break
-
-            # Se nessun item raggiunge zero, permetti il movimento
-            if not would_hit_zero:
-                for item in selected_items:
-                    new_x = max(0, item.pos().x() + delta)
-                    current_track = int(item.pos().y() / self.scene.track_height)
-                    track_y = current_track * self.scene.track_height
-                    item.setPos(new_x, track_y)
-                    item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
+                old_pos = item.pos()
+                new_x = max(0, old_pos.x() + delta)
+                current_track = int(old_pos.y() / self.scene.track_height)
+                track_y = current_track * self.scene.track_height
+                new_pos = QPointF(new_x, track_y)
+                command = MoveItemCommand(item, old_pos, new_pos)
+                self.command_manager.execute(command)
 
     def modify_item_width(self, scale_factor):
         items = self.scene.selectedItems()
@@ -580,64 +567,56 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 self.log_message(f"Errore nel salvataggio del file: {e}")
 
-    def load_from_yaml(self):
-        last_dir = self.settings.get('last_open_directory')
-
-        if os.path.exists(last_dir):
-            initial_dir = os.path.join(last_dir, '')
+    def load_from_yaml(self, test_mode=False):
+        if not test_mode:
+            last_dir = self.settings.get('last_open_directory')
+            initial_dir = os.path.join(last_dir, '') if os.path.exists(last_dir) else ""
+            file_path, _ = QFileDialog.getOpenFileName(self, "Open YAML", initial_dir, "YAML Files (*.yaml)")
         else:
-            initial_dir = ""
-
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open YAML", initial_dir, "YAML Files (*.yaml)")
+            file_path = self.current_file
 
         if file_path:
             try:
                 self.settings.set('last_open_directory', str(Path(file_path).parent))
                 self.current_file = file_path
+                
                 with open(file_path, 'r') as f:
                     data = yaml.safe_load(f)
 
-                # Pulisci la scena esistente                    
                 self.scene.clear()
-
-                # Imposta il numero di tracce
                 self.scene.num_tracks = len(data['comportamenti'])
-                self.scene.setSceneRect(0, 0, self.scene.sceneRect().width(), 
-                                    (self.scene.num_tracks * self.scene.track_height))
-                
+                self.scene.setSceneRect(0, 0, self.scene.sceneRect().width(),
+                                        (self.scene.num_tracks * self.scene.track_height))
                 self.scene.draw_tracks()
-                
+
                 for i, item_data in enumerate(data['comportamenti']):
                     processed_data = {}
                     for key, value in item_data.items():
                         if isinstance(value, list):
-                            processed_value = []
-                            for item in value:
-                                if isinstance(item, str):
-                                    processed_value.append(str(item))
-                                else:
-                                    processed_value.append(item)
+                            processed_value = [str(item) if isinstance(item, str) else item for item in value]
                             processed_data[key] = processed_value
                         else:
                             processed_data[key] = value
 
-                    x_pos = round(float(processed_data['cAttacco']) * self.scene.pixels_per_beat * self.scene.zoom_level,2)
-                    width = float(processed_data['durata'][0] if isinstance(processed_data['durata'], (list, tuple)) else processed_data['durata'])
-                    width *= round(self.scene.pixels_per_beat * self.scene.zoom_level,2)
+                    x_pos = round(float(processed_data['cAttacco']) * self.scene.pixels_per_beat * self.scene.zoom_level, 2)
+                    width = float(processed_data['durata'][0] if isinstance(processed_data['durata'], (list, tuple)) 
+                                else processed_data['durata'])
+                    width *= round(self.scene.pixels_per_beat * self.scene.zoom_level, 2)
                     
                     item = MusicItem(0, 0, width, "Clip", self.settings, self.scene.track_height)
                     item.params = {k: (str(v) if isinstance(v, str) else v) for k, v in processed_data.items()}
-                    item.setPos(x_pos,(i * self.scene.track_height))
+                    item.setPos(x_pos, (i * self.scene.track_height))
                     self.scene.addItem(item)
-                    item.updateTextStyle() 
-                     
+                    item.updateTextStyle()
+
                 self.update_window_title()
                 self.log_message(f"File caricato con successo: {file_path}")
-                self.timeline_container.timeline_view.viewport().update()
-                self.timeline_container.ruler_view.viewport().update()
-                self.timeline_container.track_header_view.viewport().update()
+                
+                for view in [self.timeline_container.timeline_view,
+                            self.timeline_container.ruler_view,
+                            self.timeline_container.track_header_view]:
+                    view.viewport().update()
 
-                # Forza la sincronizzazione degli scroll
                 current_scroll = self.timeline_container.timeline_view.horizontalScrollBar().value()
                 self.timeline_container.ruler_view.horizontalScrollBar().setValue(current_scroll)
 
@@ -697,9 +676,27 @@ class MainWindow(QMainWindow):
             self.setWindowTitle(base_title)
 
     def closeEvent(self, event):
+        # Controlla se ci sono modifiche non salvate confrontando il file corrente
+        if self.current_file:
+            # Mostra dialog di conferma
+            reply = QMessageBox.question(
+                self,
+                'Salva Modifiche',
+                'Ci sono modifiche non salvate. Vuoi salvare prima di uscire?',
+                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
+            )
+            
+            if reply == QMessageBox.Yes:
+                self.save_to_yaml()
+            elif reply == QMessageBox.Cancel:
+                event.ignore()
+                return
+
+        # Salva le ultime directory usate
         last_open = self.settings.get('last_open_directory')
         self.settings.set('last_save_directory', last_open)
         super().closeEvent(event)
+
 
     def update_all_items_style(self):
         for item in self.scene.items():

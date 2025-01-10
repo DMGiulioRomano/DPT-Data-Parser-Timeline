@@ -2,10 +2,10 @@ from PyQt5.QtWidgets import (
     QGraphicsView, QGraphicsScene, QGraphicsRectItem, 
     QGraphicsTextItem, QGraphicsItem, QLineEdit
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QRectF
+from PyQt5.QtCore import Qt, pyqtSignal, QRectF, QTimer
 from PyQt5.QtGui import QPen, QColor, QBrush, QFont, QPainter
-from Timeline import MIN_SCENE_HEIGHT
-#from src.Timeline import MIN_SCENE_HEIGHT
+#from Timeline import MIN_SCENE_HEIGHT
+from src.Timeline import MIN_SCENE_HEIGHT
 
 class EditableTextItem(QGraphicsTextItem):
     """Testo editabile per l'header della traccia"""
@@ -109,8 +109,10 @@ class TrackHeaderView(QGraphicsView):
         self.scene = TrackHeaderScene()
         super().__init__(self.scene)
         self.timeline_view = timeline_view  # Salviamo il riferimento alla timeline
-        self.setMinimumWidth(150)
-        self.setMaximumWidth(600)
+        self._min_width = 150
+        self._max_width = 600        
+        self.setMinimumWidth(self._min_width)
+        self.setMaximumWidth(self._max_width)
         self.current_width = 200
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -120,6 +122,25 @@ class TrackHeaderView(QGraphicsView):
         self.setViewportMargins(0, 0, 0, 0)
         self.viewport().setContentsMargins(0, 0, 0, 0)
         self.scene.setSceneRect(0, 0, self.current_width, MIN_SCENE_HEIGHT)
+        
+        # Aggiungiamo un metodo per forzare i limiti
+        def enforceConstraints():
+            if self.minimumWidth() != 150 or self.maximumWidth() != 600:
+                self.setMinimumWidth(150)
+                self.setMaximumWidth(600)
+        
+        # Chiamiamo questo metodo dopo un breve delay
+        QTimer.singleShot(0, enforceConstraints)
+
+    def resizeEvent(self, event):
+        """Override per mantenere i constraints durante il resize"""
+        super().resizeEvent(event)
+        current = event.size().width()
+        
+        if current < self._min_width:
+            self.setFixedWidth(self._min_width)
+        elif current > self._max_width:
+            self.setFixedWidth(self._max_width)
 
     def keyPressEvent(self, event):
         """Gestisce gli eventi da tastiera per la TrackHeaderView"""
@@ -137,14 +158,6 @@ class TrackHeaderView(QGraphicsView):
                 event.accept()
                 return
         super().keyPressEvent(event)
-    def resizeEvent(self, event):
-        """Gestisce il ridimensionamento della view"""
-        super().resizeEvent(event)
-        new_width = event.size().width()
-        if new_width != self.current_width:
-            self.current_width = new_width
-            self.scene.setSceneRect(0, 0, new_width, self.scene.height())
-            self.update_tracks_width()
 
     def set_timeline_view(self, timeline_view):
         """Imposta il riferimento alla timeline view"""
@@ -152,11 +165,14 @@ class TrackHeaderView(QGraphicsView):
 
     def update_tracks_width(self):
         """Aggiorna la larghezza di tutti gli header delle tracce"""
+        # Valida la current_width contro i constraints
+        self.current_width = max(self._min_width, min(self.current_width, self._max_width))
+        self.setFixedWidth(self.current_width)
+        
+        # Update headers
         for header in self.scene.header_items:
             if isinstance(header, TrackHeaderItem):
-                # Aggiorna il rettangolo principale
                 header.setRect(0, header.rect().y(), self.current_width, header.rect().height())
-                # Aggiorna la posizione dei pulsanti
                 button_width = 20
                 button_margin = 5
                 header.mute_button.setPos(self.current_width - (2 * button_width + button_margin), 

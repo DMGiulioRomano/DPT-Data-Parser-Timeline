@@ -17,17 +17,17 @@ class MusicItemTest(BaseTest):
         self.assertTrue(item.is_hovered)
         item.hoverLeaveEvent(None)
         self.assertFalse(item.is_hovered)
-        
+            
     def test_item_scaling(self):
         """Test scaling item"""
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
         initial_width = item.rect().width()
         
         # Test modifica durata
-        item.params['durata'] = 6  # Doppia durata
+        item.durata = 6  # Doppia durata
         new_width = item.rect().width()
-        self.assertAlmostEqual(new_width/initial_width, 2, places=1)
-        
+        self.assertAlmostEqual(new_width/initial_width, 2, places=1)        
+
     def test_color_changes(self):
         """Test cambiamenti colore"""
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
@@ -51,9 +51,8 @@ class MusicItemTest(BaseTest):
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
         
         # Modifica parametri
-        item.params['cAttacco'] = 1.0
-        item.params['durata'] = 4.0
-        
+        item.cAttacco = 1.0  
+        item.durata = 4.0        
         # Verifica posizione
         expected_x = item.params['cAttacco'] * self.timeline.pixels_per_beat * self.timeline.zoom_level
         self.assertAlmostEqual(item.pos().x(), expected_x, places=2)

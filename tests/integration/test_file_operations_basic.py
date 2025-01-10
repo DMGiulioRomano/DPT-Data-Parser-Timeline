@@ -8,7 +8,7 @@ from tests.integration import (
 
 class FileOperationsTest(BaseTest):
     """Test delle operazioni su file"""
-    
+        
     def test_save_and_load(self):
         """Test salvataggio e caricamento"""
         with tempfile.NamedTemporaryFile(suffix='.yaml', delete=False) as tmp:
@@ -25,11 +25,10 @@ class FileOperationsTest(BaseTest):
 
             # Pulisci e ricarica
             self.timeline.clear()
-            self.window.load_from_yaml()
+            self.window.load_from_yaml(test_mode=True)  # Added test_mode=True
 
             # Verifica
             items = [i for i in self.timeline.items() if isinstance(i, MusicItem)]
             self.assertEqual(len(items), 2)
-            
         finally:
             os.unlink(temp_path)

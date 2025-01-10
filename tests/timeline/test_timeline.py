@@ -1,25 +1,39 @@
 # tests/timeline/test_timeline.py
 from tests.timeline import (
-    BaseTest
+    BaseTest, QTest
 )
 from src.Timeline import Timeline
 from src.MusicItem import MusicItem
+from src.Timeline import TrackItem
 class TimelineTest(BaseTest):
+
     def test_scene_rect_update(self):
         """Test aggiornamento dimensioni scena"""
         initial_height = self.timeline.sceneRect().height()
-        self.timeline.num_tracks += 2
-        self.timeline.draw_tracks()
-        self.assertGreater(self.timeline.sceneRect().height(), initial_height)
+        initial_tracks = self.timeline.num_tracks
         
+        try:
+            self.timeline.num_tracks += 13
+            self.timeline.draw_tracks()
+            self.assertGreater(self.timeline.sceneRect().height(), initial_height)
+        finally:
+            self.timeline.num_tracks = initial_tracks
+            self.timeline.draw_tracks()
+
     def test_track_color_update(self):
         """Test aggiornamento colore tracce"""
+        initial_tracks = self.timeline.num_tracks
         new_color = "#FF0000"
-        self.window.settings.set('track_background_color', new_color)
-        self.timeline.draw_tracks()
-        for item in self.timeline.items():
-            if isinstance(item, TrackItem):
-                self.assertEqual(item.base_color.name(), new_color)
+        
+        try:
+            self.window.settings.set('track_background_color', new_color)
+            self.timeline.draw_tracks()
+            track_items = [item for item in self.timeline.items() if isinstance(item, TrackItem)]
+            self.assertTrue(len(track_items) > 0)
+            self.assertEqual(track_items[0].base_color.name().upper(), new_color.upper())
+        finally:
+            self.timeline.num_tracks = initial_tracks
+            self.timeline.draw_tracks()
 
     def test_move_track(self):
         """Test spostamento traccia"""

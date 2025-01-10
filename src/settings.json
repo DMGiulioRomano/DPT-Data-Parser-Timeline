@@ -1,12 +1,12 @@
 {
-    "last_open_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/delta/yaml_dir/sezioni",
-    "last_save_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/delta/yaml_dir/sezioni",
-    "make_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/delta",
+    "last_open_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/src",
+    "last_save_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/src",
+    "make_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/src",
     "default_duration": 5,
     "default_track_count": 8,
     "text_color": "#000000",
     "item_text_size": 15,
     "timeline_text_size": 14,
-    "timeline_background_color": "#f0f0f0",
-    "track_background_color": "#ecd672"
+    "timeline_background_color": "#F0F0F0",
+    "track_background_color": "#FF0000"
 }

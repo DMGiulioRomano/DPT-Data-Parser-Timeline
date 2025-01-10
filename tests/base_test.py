@@ -1,5 +1,5 @@
 import unittest
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtCore import Qt
 import sys
 
@@ -14,7 +14,7 @@ class BaseTest(unittest.TestCase):
         if cls.app is None:
             # Crea una nuova istanza solo se non esiste
             cls.app = QApplication([])
-        
+            
     def setUp(self):
         """Setup per ogni test individuale"""
         try:
@@ -24,6 +24,8 @@ class BaseTest(unittest.TestCase):
             self.timeline = self.window.scene
             # Assicurati che la finestra sia visibile
             self.window.show()
+            # Processa gli eventi immediatamente dopo la creazione
+            self.app.processEvents()
         except Exception as e:
             print(f"Error in setUp: {str(e)}")
             raise
@@ -31,10 +33,25 @@ class BaseTest(unittest.TestCase):
     def tearDown(self):
         """Cleanup dopo ogni test"""
         if hasattr(self, 'window'):
-            self.window.hide()  # Nascondi prima di chiudere
-            self.window.deleteLater()
-        # Processa gli eventi pendenti
-        self.app.processEvents()
+            try:
+                # Nascondi prima di chiudere
+                self.window.hide()
+                
+                # Chiudi esplicitamente
+                self.window.close()
+                
+                # Schedula la deletion
+                self.window.deleteLater()
+                
+                # Processa gli eventi pendenti
+                self.app.processEvents()
+                
+                # Rimuovi i riferimenti
+                self.window = None
+                self.timeline = None
+                
+            except Exception as e:
+                print(f"Warning in tearDown: {str(e)}")
 
     @classmethod
     def tearDownClass(cls):

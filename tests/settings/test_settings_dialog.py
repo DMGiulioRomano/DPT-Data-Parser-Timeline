@@ -3,7 +3,7 @@ from tests.settings import (
     BaseTest,
     Qt, QColor
 )
-
+from src.SettingsDialog import SettingsDialog
 class SettingsDialogTest(BaseTest):
     def test_directory_selection(self):
         """Test selezione directory"""
