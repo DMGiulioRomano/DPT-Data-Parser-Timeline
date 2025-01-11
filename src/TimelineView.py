@@ -138,10 +138,10 @@ class TimelineView(QGraphicsView):
 
     def setup_view(self):
         """Configura le impostazioni base della view"""
-        print("\n=== Debug TimelineView Setup ===")
+        #print("\n=== Debug TimelineView Setup ===")
         
         # Debug allineamento
-        print("Setting alignment...")
+        #print("Setting alignment...")
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         
         # Debug scrollbar policies
@@ -150,14 +150,14 @@ class TimelineView(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
         # Debug margins
-        print("Setting margins...")
+        #print("Setting margins...")
         self.setViewportMargins(0, 0, 0, 0)
         self.setContentsMargins(0, 0, 0, 0)
-        print(f"Viewport margins: {self.viewportMargins()}")
-        print(f"Contents margins: {self.contentsMargins()}")
+        #print(f"Viewport margins: {self.viewportMargins()}")
+        #print(f"Contents margins: {self.contentsMargins()}")
         
         # Debug viewport margins
-        print("Checking viewport...")
+        #print("Checking viewport...")
         if self.viewport():
             self.viewport().setContentsMargins(0, 0, 0, 0)
             print(f"Viewport content margins: {self.viewport().contentsMargins()}")
@@ -167,7 +167,7 @@ class TimelineView(QGraphicsView):
         # Debug scrollbar state
         h_scrollbar = self.horizontalScrollBar()
         v_scrollbar = self.verticalScrollBar()
-        
+        """
         print("\nHorizontal Scrollbar State:")
         print(f"Exists: {h_scrollbar is not None}")
         print(f"Range: {h_scrollbar.minimum()} to {h_scrollbar.maximum()}")
@@ -190,4 +190,4 @@ class TimelineView(QGraphicsView):
             print(f"Viewport Rect: {self.viewport().rect()}")
         else:
             print("\nWarning: No scene set yet")
-            
+            """

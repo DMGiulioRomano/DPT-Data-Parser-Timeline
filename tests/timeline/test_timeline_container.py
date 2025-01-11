@@ -216,7 +216,7 @@ class TimelineContainerTest(BaseTest):
         )
         
         # Debug pre-scroll
-        container.debug_view_state()
+        #container.debug_view_state()
         
         # Test scroll
         test_values = [100, 50, 0, 75]

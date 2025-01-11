@@ -4,13 +4,27 @@ from tests.timeline import (
 )
 from src.MusicItem import MusicItem
 import yaml  # Questa importazione esterna è necessaria per test YAML
+import tempfile
+import os
 class EdgeCasesTest(BaseTest):
-    def test_invalid_file_load(self):
-        """Test caricamento file invalido"""
-        with self.assertRaises(yaml.YAMLError):
-            self.window.current_file = "invalid.yaml"
-            self.window.load_from_yaml()
 
+    def test_invalid_file_load(self):
+        """Test caricamento file YAML sintatticamente invalido"""
+        # Crea un file YAML temporaneo con contenuto invalido
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp:
+            tmp.write("comportamenti: [this is not valid yaml}")  # Sintassi YAML invalida
+            tmp_path = tmp.name
+
+        try:
+            # Imposta il file come current_file
+            self.window.current_file = tmp_path
+            # Tenta di caricare il file invalido (dovrebbe sollevare YAMLError)
+            with self.assertRaises(yaml.YAMLError):
+                self.window.load_from_yaml(test_mode=True)
+                
+        finally:
+            # Pulisci il file temporaneo
+            os.unlink(tmp_path)
     def test_boundary_movements(self):
         """Test movimenti ai limiti della timeline"""
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)

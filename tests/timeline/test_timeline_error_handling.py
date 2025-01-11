@@ -5,6 +5,7 @@ from tests.timeline import (
 from src.Timeline import Timeline
 from src.MusicItem import MusicItem
 import yaml  # Per gestione errori YAML
+from src.Settings import Settings
 
 class ErrorHandlingTest(BaseTest):
     def test_invalid_file_operations(self):
@@ -12,7 +13,7 @@ class ErrorHandlingTest(BaseTest):
         # Test caricamento file non esistente
         self.window.current_file = "nonexistent.yaml"
         with self.assertRaises(FileNotFoundError):
-            self.window.load_from_yaml()
+            self.window.load_from_yaml(test_mode=True)
             
     def test_corrupted_settings(self):
         """Test settings corrotte"""
