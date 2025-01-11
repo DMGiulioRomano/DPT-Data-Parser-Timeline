@@ -25,18 +25,19 @@ class CommandManager:
     def __init__(self):
         self._undo_stack: List[Command] = []
         self._redo_stack: List[Command] = []
-        self._max_stack_size = 100  # Limita la dimensione dello stack per gestire la memoria
+        self._max_stack_size = 50
 
     def execute(self, command: Command):
         command.execute()
-        self._undo_stack.append(command)
         
-        # Mantiene la dimensione dello stack sotto controllo
-        if len(self._undo_stack) > self._max_stack_size:
+        # Mantiene la dimensione dello stack sotto controllo PRIMA di aggiungere il nuovo comando
+        if len(self._undo_stack) >= self._max_stack_size:  # Cambiato da > a >=
             self._undo_stack.pop(0)
-
+            
+        self._undo_stack.append(command)
+        self._redo_stack.clear() # Pulisce lo stack di redo dopo un nuovo comando
         self._notify_state_change()
-
+                
     def undo(self):
         if not self._undo_stack:
             return

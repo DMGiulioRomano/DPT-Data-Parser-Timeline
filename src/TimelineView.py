@@ -21,14 +21,6 @@ class TimelineView(QGraphicsView):
         self.setup_selection()
         self.setup_zoom()
 
-    def setup_view(self):
-        """Configura le impostazioni base della view"""
-        self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.setViewportMargins(0, 0, 0, 0)
-        self.setContentsMargins(0, 0, 0, 0)
-        self.viewport().setContentsMargins(0, 0, 0, 0)
-
     def setup_appearance(self):
         """Configura le impostazioni di rendering"""
         self.setRenderHint(QPainter.Antialiasing)
@@ -141,3 +133,61 @@ class TimelineView(QGraphicsView):
         for item in items:
             if isinstance(item, MusicItem):
                 item.setSelected(True)
+
+
+
+    def setup_view(self):
+        """Configura le impostazioni base della view"""
+        print("\n=== Debug TimelineView Setup ===")
+        
+        # Debug allineamento
+        print("Setting alignment...")
+        self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        
+        # Debug scrollbar policies
+        print("Setting scrollbar policies...")
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
+        # Debug margins
+        print("Setting margins...")
+        self.setViewportMargins(0, 0, 0, 0)
+        self.setContentsMargins(0, 0, 0, 0)
+        print(f"Viewport margins: {self.viewportMargins()}")
+        print(f"Contents margins: {self.contentsMargins()}")
+        
+        # Debug viewport margins
+        print("Checking viewport...")
+        if self.viewport():
+            self.viewport().setContentsMargins(0, 0, 0, 0)
+            print(f"Viewport content margins: {self.viewport().contentsMargins()}")
+        else:
+            print("Warning: Viewport not available")
+        
+        # Debug scrollbar state
+        h_scrollbar = self.horizontalScrollBar()
+        v_scrollbar = self.verticalScrollBar()
+        
+        print("\nHorizontal Scrollbar State:")
+        print(f"Exists: {h_scrollbar is not None}")
+        print(f"Range: {h_scrollbar.minimum()} to {h_scrollbar.maximum()}")
+        print(f"Page Step: {h_scrollbar.pageStep()}")
+        print(f"Is Visible: {h_scrollbar.isVisible()}")
+        print(f"Is Enabled: {h_scrollbar.isEnabled()}")
+        
+        print("\nVertical Scrollbar State:")
+        print(f"Exists: {v_scrollbar is not None}")
+        print(f"Range: {v_scrollbar.minimum()} to {v_scrollbar.maximum()}")
+        print(f"Page Step: {v_scrollbar.pageStep()}")
+        print(f"Is Visible: {v_scrollbar.isVisible()}")
+        print(f"Is Enabled: {v_scrollbar.isEnabled()}")
+        
+        # Debug scene rect if scene exists
+        if self.scene():
+            print("\nScene Information:")
+            print(f"Scene Rect: {self.scene().sceneRect()}")
+            print(f"View Rect: {self.rect()}")
+            print(f"Viewport Rect: {self.viewport().rect()}")
+        else:
+            print("\nWarning: No scene set yet")
+            

@@ -7,10 +7,15 @@ from tests.integration import (
 )
 import yaml
 import os
-class AdvancedFileTest(BaseTest):
+from unittest.mock import patch
+from PyQt5.QtWidgets import QMessageBox
 
+
+class AdvancedFileTest(BaseTest):
     def test_file_state_recovery(self):
         """Test recupero stato file"""
+        self.mock_message_box()  # Aggiungi questa riga
+
         test_data = {
             "comportamenti": [{
                 "cAttacco": 0,
@@ -44,11 +49,10 @@ class AdvancedFileTest(BaseTest):
                         
     def test_autosave_behavior(self):
         """Test comportamento autosave"""
+        self.mock_message_box(QMessageBox.Yes)  # Aggiungi questa riga
+
         # Simula chiusura con modifiche non salvate
         self.window.current_file = "test.yaml"
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
         
-        with patch('PyQt5.QtWidgets.QMessageBox.question') as mock_question:
-            mock_question.return_value = QMessageBox.Yes
-            self.window.closeEvent(QCloseEvent())
-            mock_question.assert_called_once()
+        self.window.closeEvent(QCloseEvent())

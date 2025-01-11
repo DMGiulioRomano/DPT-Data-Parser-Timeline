@@ -1,12 +1,12 @@
 {
-    "last_open_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/src",
-    "last_save_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/src",
+    "last_open_directory": "/var/folders/k5/y1pv8ndn3734wtc_m2_32d400000gn/T",
+    "last_save_directory": "/var/folders/k5/y1pv8ndn3734wtc_m2_32d400000gn/T",
     "make_directory": "/Users/giuliodemattia/Github/DMGiulioRomano/DPT-Data-Personal-Timeline/src",
     "default_duration": 5,
     "default_track_count": 8,
     "text_color": "#000000",
     "item_text_size": 15,
     "timeline_text_size": 14,
-    "timeline_background_color": "#F0F0F0",
+    "timeline_background_color": "#FF0000",
     "track_background_color": "#FF0000"
 }

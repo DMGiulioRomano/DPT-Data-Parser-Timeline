@@ -145,8 +145,9 @@ class ParamDialog(QDialog):
             except (ValueError, SyntaxError) as e:
                 print(f"Error parsing parameter {key}: {e}")
                 continue
+
         # Aggiorna anche la posizione fisica dell'item nella timeline se il parametro cAttacco è stato modificato
-        if hasattr(self, 'item') and 'cAttacco' in self.params:
+        if hasattr(self, 'item') and self.item and hasattr(self.item, 'scene') and self.item.scene() and 'cAttacco' in self.params:
             new_x = float(self.params['cAttacco']) * self.item.scene().pixels_per_beat * self.item.scene().zoom_level
             self.item.setPos(new_x, self.item.pos().y())
         

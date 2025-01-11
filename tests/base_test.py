@@ -1,7 +1,8 @@
 import unittest
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
 from PyQt5.QtCore import Qt
 import sys
+from unittest.mock import patch, MagicMock
 
 class BaseTest(unittest.TestCase):
     """Classe base per tutti i test che necessitano di QApplication"""
@@ -23,7 +24,7 @@ class BaseTest(unittest.TestCase):
             self.window = MainWindow()
             self.timeline = self.window.scene
             # Assicurati che la finestra sia visibile
-            self.window.show()
+            self.window.hide()
             # Processa gli eventi immediatamente dopo la creazione
             self.app.processEvents()
         except Exception as e:
@@ -58,3 +59,9 @@ class BaseTest(unittest.TestCase):
         """Cleanup finale"""
         # Non chiudiamo l'app qui, altrimenti i test successivi falliranno
         pass
+
+    def mock_message_box(self, return_value=QMessageBox.No):
+        """Helper per effettuare il mocking di QMessageBox.question"""
+        patcher = patch('PyQt5.QtWidgets.QMessageBox.question', return_value=return_value)
+        patcher.start()
+        self.addCleanup(patcher.stop)

@@ -5,12 +5,13 @@ from tests.integration import (
     tempfile, os
 )
 
-
 class FileOperationsTest(BaseTest):
     """Test delle operazioni su file"""
         
     def test_save_and_load(self):
         """Test salvataggio e caricamento"""
+        self.mock_message_box()  # Aggiungi questa riga
+
         with tempfile.NamedTemporaryFile(suffix='.yaml', delete=False) as tmp:
             temp_path = tmp.name
 

@@ -115,7 +115,7 @@ class TrackHeaderView(QGraphicsView):
         self.setMaximumWidth(self._max_width)
         self.current_width = 200
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.setRenderHint(QPainter.Antialiasing)
         self.setContentsMargins(0, 0, 0, 0)
@@ -203,14 +203,13 @@ class TrackHeaderView(QGraphicsView):
             )
             event.accept()
             return
-        # Controlla se abbiamo un riferimento valido alla timeline view
         if self.timeline_view and self.timeline_view.verticalScrollBar().isVisible():
-            # Calcola il valore di scroll basato sull'evento della rotella
-            delta = event.angleDelta().y()
-            # Aggiorna il valore della scrollbar della timeline view
+            # Blocca i segnali per evitare feedback loop
+            self.verticalScrollBar().blockSignals(True)
             self.timeline_view.verticalScrollBar().setValue(
-                self.timeline_view.verticalScrollBar().value() - delta
+                self.timeline_view.verticalScrollBar().value() - event.angleDelta().y()
             )
+            self.verticalScrollBar().blockSignals(False)
             event.accept()
         else:
             super().wheelEvent(event)

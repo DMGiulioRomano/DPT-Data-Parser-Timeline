@@ -5,8 +5,20 @@ from tests.dialogs import (
     DEFAULT_PARAMS
 )
 from src.ParamDialog import ParamDialog
+from unittest.mock import patch
+from PyQt5.QtWidgets import QMessageBox
 
 class ParamDialogTest(BaseTest):
+    def setUp(self):
+        # Mock del QMessageBox.question per evitare il popup di autosave
+        self.patcher = patch('PyQt5.QtWidgets.QMessageBox.question', return_value=QMessageBox.No)
+        self.mock_question = self.patcher.start()
+        super().setUp()
+
+    def tearDown(self):
+        self.patcher.stop()
+        super().tearDown()
+
     def test_color_selection(self):
         """Test selezione colore"""
         dialog = ParamDialog(DEFAULT_PARAMS)

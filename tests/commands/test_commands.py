@@ -11,17 +11,25 @@ class CommandsTest(BaseTest):
 
     def test_command_stack_limit(self):
         """Test limite stack comandi"""
-        # Crea più comandi del limite (50)
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
-        for i in range(55):  # Superiamo il limite di 50
+        
+        print(f"\nStack size iniziale: {len(self.command_manager._undo_stack)}")
+        
+        for i in range(55):
             old_pos = QPointF(i, 0)
             new_pos = QPointF(i + 1, 0)
             cmd = MoveItemCommand(item, old_pos, new_pos)
             self.command_manager.execute(cmd)
             
-        # Verifica che lo stack sia limitato
+            if i % 10 == 0:  # Stampa ogni 10 iterazioni
+                print(f"Iterazione {i}: Stack size = {len(self.command_manager._undo_stack)}")
+        
+        final_size = len(self.command_manager._undo_stack)
+        print(f"\nStack size finale: {final_size}")
+        print(f"Max size consentita: {self.command_manager._max_stack_size}")
+        
         self.assertLessEqual(len(self.command_manager._undo_stack), 50)
-
+        
     def test_redo_stack_clear(self):
         """Test pulizia stack redo dopo nuovo comando"""
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)

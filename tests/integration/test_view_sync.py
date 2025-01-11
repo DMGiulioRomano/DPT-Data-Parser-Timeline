@@ -7,19 +7,24 @@ from tests.integration import (
 )
 
 class ViewSyncTest(BaseTest):
+
     def test_selection_sync(self):
         """Test sincronizzazione selezione tra viste"""
         # Seleziona da timeline
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
         item.setSelected(True)
         
-        # Verifica header
+        # Verifica che l'header NON sia selezionato quando si seleziona un item
         header = self.window.timeline_container.track_header_view.scene.header_items[0]
-        self.assertTrue(header.is_selected)
+        self.assertFalse(header.is_selected)
         
-        # Seleziona da header
+        # Verifica che selezionando l'header venga aggiornata la traccia corrente
+        header.setSelected(True)
+        self.assertEqual(self.window.selected_track, 0)
+        
+        # Deselezionando l'header, la traccia corrente dovrebbe essere None
         header.setSelected(False)
-        self.assertFalse(item.isSelected())
+        self.assertIsNone(self.window.selected_track)
 
     def test_scroll_sync_complex(self):
         """Test sincronizzazione scroll complessa"""

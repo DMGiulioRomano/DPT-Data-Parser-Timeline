@@ -42,20 +42,6 @@ class TimelineContainerTest(BaseTest):
         event = QKeyEvent(QEvent.KeyPress, Qt.Key_A, Qt.NoModifier)
         container.timeline_view.keyPressEvent(event)
 
-    def test_view_synchronization(self):
-        """Test sincronizzazione views"""
-        container = self.window.timeline_container
-        
-        # Scroll verticale
-        timeline_view = container.timeline_view
-        header_view = container.track_header_view
-        
-        timeline_view.verticalScrollBar().setValue(100)
-        self.assertEqual(
-            header_view.verticalScrollBar().value(),
-            timeline_view.verticalScrollBar().value()
-        )
-
     def test_splitter_movement(self):
         """Test movimento splitter"""
         container = self.window.timeline_container
@@ -106,25 +92,6 @@ class TimelineContainerTest(BaseTest):
             QApplication.processEvents()
         self.assertEqual(view.width(), new_width, 
                         "Header width not updated correctly")
-                
-
-    def test_scroll_synchronization(self):
-        """Test sincronizzazione scroll completa"""
-        container = self.window.timeline_container
-        
-        # Test scroll orizzontale
-        container.timeline_view.horizontalScrollBar().setValue(100)
-        self.assertEqual(
-            container.ruler_view.horizontalScrollBar().value(),
-            100
-        )
-        
-        # Test scroll verticale
-        container.timeline_view.verticalScrollBar().setValue(50)
-        self.assertEqual(
-            container.track_header_view.verticalScrollBar().value(),
-            50
-        )
 
     def test_initialize_views(self):
         """Test inizializzazione completa viste"""
@@ -162,11 +129,98 @@ class TimelineContainerTest(BaseTest):
         # Forza il processamento di eventi in sospeso
         QApplication.processEvents()
                 
+    def test_view_synchronization(self):
+        """Test sincronizzazione views"""
+        container = self.window.timeline_container
+        
+        timeline_view = container.timeline_view
+        header_view = container.track_header_view
+        
+        self.assertIsNotNone(timeline_view, "Timeline view is None")
+        self.assertIsNotNone(header_view, "Header view is None")
+        
+        timeline_scroll = timeline_view.verticalScrollBar()
+        header_scroll = header_view.verticalScrollBar()
+        
+        # Verifica che i range siano sincronizzati
+        self.assertEqual(timeline_scroll.maximum(), header_scroll.maximum(),
+                        "Scrollbar ranges don't match")
+        
+        # Test in entrambe le direzioni con più cicli di eventi
+        test_values = [100, 50, 0, 75]
+        for value in test_values:
+            print(f"\nTesting with value: {value}")
+            timeline_scroll.setValue(value)
+            for _ in range(3):  # Forza più cicli di eventi
+                QApplication.processEvents()
+            
+            self.assertEqual(header_scroll.value(), timeline_scroll.value(),
+                            f"Scroll mismatch. Header: {header_scroll.value()}, Timeline: {timeline_scroll.value()}")
+                    
+    def test_scroll_synchronization(self):
+        """Test sincronizzazione scroll completa"""
+        container = self.window.timeline_container
+        
+        # Test scroll orizzontale
+        print("\n=== Starting Scroll Test ===")
+        timeline_scroll = container.timeline_view.horizontalScrollBar()
+        ruler_scroll = container.ruler_view.horizontalScrollBar()
+        
+        print(f"Initial Timeline scroll value: {timeline_scroll.value()}")
+        print(f"Initial Ruler scroll value: {ruler_scroll.value()}")
+        
+        print("\nSetting timeline scroll to 100...")
+        timeline_scroll.setValue(100)
+        
+        print(f"Timeline scroll after set: {timeline_scroll.value()}")
+        print(f"Ruler scroll after timeline set: {ruler_scroll.value()}")
+        
+        # Forza l'elaborazione degli eventi
+        QApplication.processEvents()
+        
+        print("\nAfter processing events:")
+        print(f"Timeline scroll: {timeline_scroll.value()}")
+        print(f"Ruler scroll: {ruler_scroll.value()}")
+        
+        self.assertEqual(
+            ruler_scroll.value(),
+            100,
+            "Scrollbar of ruler_view did not synchronize with timeline_view."
+        )
+
     def test_splitter_constraints(self):
-        """Test vincoli splitter"""
+        """Test splitter constraints"""
         container = self.window.timeline_container
         header_view = container.track_header_view
         
-        # Verifica limiti width
-        self.assertGreaterEqual(header_view.width(), header_view.minimumWidth())
-        self.assertLessEqual(header_view.width(), header_view.maximumWidth())
+        # Force process pending events to ensure components are initialized
+        QApplication.processEvents()
+        
+        # Verify actual width is within constraints
+        self.assertGreaterEqual(
+            header_view.width(),
+            header_view.minimumWidth(),
+            "Header width below minimum"
+        )
+        self.assertLessEqual(
+            header_view.width(), 
+            header_view.maximumWidth(),
+            "Header width above maximum"
+        )
+        
+        # Test splitter movement
+        initial_width = header_view.width()
+        test_width = initial_width + 20
+        
+        # Ensure test width is within constraints
+        test_width = max(header_view.minimumWidth(), 
+                        min(test_width, header_view.maximumWidth()))
+        
+        container.on_splitter_moved(test_width, 0)
+        QApplication.processEvents()
+        
+        self.assertEqual(
+            header_view.width(),
+            test_width,
+            "Header width not updated correctly"
+        )
