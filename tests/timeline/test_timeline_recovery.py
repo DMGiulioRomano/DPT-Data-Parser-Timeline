@@ -4,7 +4,7 @@ from tests.timeline import (
 )
 from src.Timeline import Timeline
 from src.MusicItem import MusicItem
-
+from src.ParamDialog import ParamDialog
 import yaml  # Per test recupero YAML
 
 class RecoveryTest(BaseTest):
@@ -17,7 +17,7 @@ class RecoveryTest(BaseTest):
         # Tenta caricamento
         self.window.current_file = 'corrupted.yaml'
         with self.assertRaises(yaml.YAMLError):
-            self.window.load_from_yaml()
+            self.window.load_from_yaml(test_mode=True)
             
         # Verifica che la timeline sia in stato consistente
         self.assertGreaterEqual(self.timeline.num_tracks, 1)
@@ -29,8 +29,14 @@ class RecoveryTest(BaseTest):
         # Imposta parametro invalido
         item.params['cAttacco'] = "invalid"
         
-        # Forza aggiornamento
-        item.showParamDialog()
+        # Crea una istanza di ParamDialog
+        dialog = ParamDialog(item.params, item.color, item=item)
+        
+        # Simula l'inserimento di un valore valido nella casella di testo 'cAttacco'
+        dialog.inputs['cAttacco'].setText("1.5")
+        
+        # Accetta il dialogo
+        dialog.accept()
         
         # Verifica che il parametro sia stato corretto
         self.assertIsInstance(item.params['cAttacco'], (int, float))

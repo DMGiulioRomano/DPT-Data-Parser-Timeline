@@ -2,11 +2,11 @@ from PyQt5.QtWidgets import (
     QGraphicsView, QGraphicsScene, QGraphicsRectItem, 
     QGraphicsTextItem, QGraphicsItem, QLineEdit
 )
-from PyQt5.QtCore import Qt, pyqtSignal, QRectF, QTimer
-from PyQt5.QtGui import QPen, QColor, QBrush, QFont, QPainter
+from PyQt5.QtCore import Qt, pyqtSignal, QRectF, QTimer, QEvent, QPointF, QPoint
+from PyQt5.QtGui import QPen, QColor, QBrush, QFont, QPainter, QMouseEvent
 #from Timeline import MIN_SCENE_HEIGHT
 from src.Timeline import MIN_SCENE_HEIGHT
-
+from PyQt5.QtWidgets import QGraphicsSceneMouseEvent
 class EditableTextItem(QGraphicsTextItem):
     """Testo editabile per l'header della traccia"""
     def __init__(self, text, parent=None):
@@ -77,6 +77,18 @@ class TrackHeaderItem(QGraphicsRectItem):
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event):
+        if event is None:  # Aggiunta per supportare i test
+            event = QGraphicsSceneMouseEvent(QEvent.GraphicsSceneMousePress)
+            event.setButton(Qt.LeftButton)
+            event.setButtons(Qt.LeftButton)
+            event.setModifiers(Qt.NoModifier)
+            event.setScenePos(QPointF(0, 0))
+            event.setScreenPos(QPoint(0, 0))
+            event.setLastScenePos(QPointF(0, 0))
+            event.setLastScreenPos(QPoint(0, 0))
+            event.setButtonDownScenePos(Qt.LeftButton, QPointF(0, 0))
+            event.setButtonDownScreenPos(Qt.LeftButton, QPoint(0, 0))
+
         scene = self.scene()
         if scene:
             # Gestisci la selezione multipla con CTRL/CMD
@@ -86,7 +98,7 @@ class TrackHeaderItem(QGraphicsRectItem):
                         item.setSelected(False)
             self.setSelected(not self.is_selected)
         super().mousePressEvent(event)
-
+                
     def setSelected(self, selected):
         self.is_selected = selected
         self.setBrush(QBrush(self.selected_color if selected else self.base_color))
@@ -244,6 +256,12 @@ class TrackButton(QGraphicsRectItem):
         text_y = (20 - text_rect.height()) / 2
         self.text_item.setPos(text_x, text_y)
         
+
+    def toggleForTest(self):
+        """Metodo speciale per i test che simula un click"""
+        self.is_active = not self.is_active
+        self.setBrush(QBrush(QColor(150, 150, 150) if self.is_active else QColor(200, 200, 200)))
+
     def mousePressEvent(self, event):
         self.is_active = not self.is_active
         self.setBrush(QBrush(QColor(150, 150, 150) if self.is_active else QColor(200, 200, 200)))

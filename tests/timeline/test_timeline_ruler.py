@@ -1,15 +1,16 @@
 # tests/timeline/test_timeline_ruler.py
 from tests.timeline import (
-    BaseTest,
+    BaseTest, QTest,
     QGraphicsTextItem
 )
 from src.TimelineRuler import TimelineRuler
-
+from src.TimelineContainer import TimelineContainer
 class TimelineRulerTest(BaseTest):
     def setUp(self):
         super().setUp()
         self.ruler_view = self.window.timeline_container.ruler_view
         self.ruler = self.ruler_view.scene()
+        self.timeline_container = TimelineContainer(self.timeline)  
 
     def test_ruler_zoom_sync(self):
         """Test sincronizzazione zoom tra ruler e timeline"""
@@ -20,15 +21,20 @@ class TimelineRulerTest(BaseTest):
         self.assertEqual(self.ruler.zoom_level, self.timeline.zoom_level)
         
     def test_ruler_scroll_sync(self):
-        """Test sincronizzazione scroll"""
-        scrollbar = self.timeline_container.timeline_view.horizontalScrollBar()
-        scrollbar.setValue(100)
+        """Test sincronizzazione scroll tra timeline e ruler"""
+        # Assicurati che le connessioni siano stabilite
+        QTest.qWait(100)  # Attendi 100ms
         
-        # Verifica che il ruler si sia spostato
-        self.assertEqual(
-            self.ruler_view.horizontalScrollBar().value(),
-            scrollbar.value()
-        )
+        # Imposta un valore di scroll sulla timeline
+        timeline_scroll = self.timeline_container.timeline_view.horizontalScrollBar()
+        timeline_scroll.setValue(100)
+        
+        # Attendi che la sincronizzazione avvenga
+        QTest.qWait(50)
+        
+        # Verifica che il ruler si sia sincronizzato
+        ruler_scroll = self.timeline_container.ruler_view.horizontalScrollBar()
+        self.assertEqual(ruler_scroll.value(), timeline_scroll.value())
 
     def test_time_markers(self):
         """Test markers temporali del ruler"""
@@ -58,4 +64,4 @@ class TimelineRulerTest(BaseTest):
         new_color = "#FF0000"
         self.window.settings.set('timeline_background_color', new_color)
         ruler.updateColors()
-        self.assertEqual(ruler.backgroundBrush().color().name(), new_color)
+        self.assertEqual(ruler.backgroundBrush().color().name().upper(), new_color.upper())

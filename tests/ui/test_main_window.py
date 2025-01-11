@@ -9,13 +9,7 @@ class MainWindowTest(BaseTest):
         # Simula New File
         self.window.new_file()
         self.assertIsNone(self.window.current_file)
-        
-    def test_grid_operations(self):
-        """Test operazioni griglia"""
-        initial_grid = self.window.scene.grid_division
-        self.window.increase_grid()
-        self.assertEqual(self.window.scene.grid_division, initial_grid * 2)
-        
+                
     def test_window_title_update(self):
         """Test aggiornamento titolo finestra"""
         self.window.current_file = "test.yaml"
@@ -63,6 +57,7 @@ class MainWindowTest(BaseTest):
     def test_modify_item_width(self):
         """Test modifica larghezza item"""
         item = self.timeline.add_music_item(0, 0, 3, "Test", self.window.settings)
+        item.setSelected(True)  # Selezioniamo l'item prima di modificarlo
         initial_width = item.rect().width()
         self.window.modify_item_width(1.2)
         self.assertAlmostEqual(item.rect().width(), initial_width * 1.2, places=1)

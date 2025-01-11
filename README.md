@@ -29,7 +29,7 @@ pip install PyQt5 PyYAML
 ```
 3. Run the application:
 ```bash
-python main.py
+cd src && python3.11 main.py
 ```
 
 ### Running the Compiled Application (macOS)

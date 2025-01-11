@@ -1,8 +1,8 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QPen, QColor, QBrush, QFont
 from PyQt5.QtWidgets import (
-    QDialog, QFormLayout, QLineEdit, QDialogButtonBox, 
-    QPushButton, QColorDialog
+    QDialog, QFormLayout, QLineEdit, QDialogButtonBox,
+    QPushButton, QColorDialog, QMessageBox
 )
 
 class ParamDialog(QDialog):
@@ -75,6 +75,16 @@ class ParamDialog(QDialog):
                 if isinstance(self.params[key], list):
                     input_text = input_field.text()
                     try:
+                        if key == 'cAttacco' or key == 'durata' or key == 'durataArmonica':  # Tratta cAttacco in modo speciale
+                            self.params[key] = float(input_field.text())  # Forza float
+                        elif isinstance(self.params[key], (int, float)):
+                            self.params[key] = type(self.params[key])(input_field.text())
+                        else:
+                            self.params[key] = input_field.text()
+                    except ValueError as e:
+                        QMessageBox.warning(self, "Valore non valido", f"Parametro non valido {key}: {input_field.text()}")
+                        return  # Ritorna senza chiamare super().accept()
+                    try:
                         # Preprocessa il testo per gestire valori senza apici
                         processed_text = input_text
                         if not (input_text.startswith('[') and input_text.endswith(']')):
@@ -108,7 +118,8 @@ class ParamDialog(QDialog):
                         
                     except (ValueError, SyntaxError) as e:
                         print(f"Error parsing list value for {key}: {e}")
-                        continue
+                        QMessageBox.warning(self, "Invalid Input", f"Error parsing list value for {key}: {str(e)}")
+                        return
                 else:
                     try:
                         text_value = input_field.text()
@@ -124,7 +135,8 @@ class ParamDialog(QDialog):
                                     self.params[key] = float_value
                             except ValueError:
                                 print(f"Invalid numeric input for {key}: {text_value}")
-                                continue
+                                QMessageBox.warning(self, "Invalid Input", f"Invalid numeric value for {key}: {text_value}")
+                                return
                         else:
                             # Per parametri non numerici
                             if any(c.isalpha() for c in text_value):
@@ -137,14 +149,17 @@ class ParamDialog(QDialog):
                                     except ValueError:
                                         self.params[key] = float(text_value)
                                 except ValueError:
-                                    continue
+                                    QMessageBox.warning(self, "Invalid Input", f"Invalid value for {key}: {text_value}")
+                                    return
                     except ValueError as e:
                         print(f"Error parsing value for {key}: {e}")
-                        continue
-                        
+                        QMessageBox.warning(self, "Invalid Input", f"Error parsing value for {key}: {str(e)}")
+                        return
+ 
             except (ValueError, SyntaxError) as e:
                 print(f"Error parsing parameter {key}: {e}")
-                continue
+                QMessageBox.warning(self, "Invalid Input", f"Error parsing parameter {key}: {str(e)}")
+                return
 
         # Aggiorna anche la posizione fisica dell'item nella timeline se il parametro cAttacco è stato modificato
         if hasattr(self, 'item') and self.item and hasattr(self.item, 'scene') and self.item.scene() and 'cAttacco' in self.params:

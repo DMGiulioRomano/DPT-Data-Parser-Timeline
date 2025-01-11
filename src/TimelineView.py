@@ -60,13 +60,7 @@ class TimelineView(QGraphicsView):
 
     def keyPressEvent(self, event):
         if event.modifiers() & Qt.AltModifier:
-            if event.key() == Qt.Key_Left:
-                self.horizontalScrollBar().setValue(
-                    self.horizontalScrollBar().value() - 100)
-            elif event.key() == Qt.Key_Right:
-                self.horizontalScrollBar().setValue(
-                    self.horizontalScrollBar().value() + 100)
-            elif event.key() == Qt.Key_Up:
+            if event.key() == Qt.Key_Up:
                 self.scene().scale_scene(1.2)
             elif event.key() == Qt.Key_Down:
                 self.scene().scale_scene(0.8)
@@ -127,7 +121,7 @@ class TimelineView(QGraphicsView):
         self.setDragMode(QGraphicsView.NoDrag)
 
     def handleRubberBandSelection(self, rubberBandRect, fromScenePoint, toScenePoint):
-        selectionRect = self.mapToScene(rubberBandRect).boundingRect()
+        selectionRect = self.mapToScene(rubberBandRect.toRect()).boundingRect()
         items = self.scene().items(selectionRect)
         
         for item in items:

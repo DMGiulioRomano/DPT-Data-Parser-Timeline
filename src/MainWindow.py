@@ -172,6 +172,18 @@ class MainWindow(QMainWindow):
         self.redo_action = redo_action  
         
         edit_menu.addSeparator()  
+        # Aggiungi azioni per copia/incolla
+        copy_action = edit_menu.addAction('&Copy')
+        copy_action.setShortcut(QKeySequence.Copy)
+        copy_action.triggered.connect(self.copy_selected_items)
+        self.addAction(copy_action)
+
+        paste_action = edit_menu.addAction('&Paste')
+        paste_action.setShortcut(QKeySequence.Paste)
+        paste_action.triggered.connect(self.paste_items)
+        self.addAction(paste_action)
+        
+        edit_menu.addSeparator()  
 
         rename_action = edit_menu.addAction('&Rename Clip')
         rename_action.setShortcut(Qt.Key_Return)
@@ -381,6 +393,41 @@ class MainWindow(QMainWindow):
                 if isinstance(item, TrackItem):
                     self.scene.delete_track(item.track_number)
                     break
+
+    def copy_selected_items(self):
+        """Copia gli item selezionati nella clipboard interna"""
+        self.clipboard_items = []
+        for item in self.scene.selectedItems():
+            if isinstance(item, MusicItem):
+                self.clipboard_items.append({
+                    'params': item.params.copy(),
+                    'width': item.rect().width(),
+                    'color': item.color,
+                    'name': item.name,
+                    'settings': item.settings,
+                    'track_index': item.track_index
+                })
+
+    def paste_items(self):
+        """Incolla gli item dalla clipboard interna"""
+        if hasattr(self, 'clipboard_items') and self.clipboard_items:
+            for item_data in self.clipboard_items:
+                # Creiamo un nuovo item con un piccolo offset per distinguerlo visivamente
+                new_item = MusicItem(0, 0, item_data['width'], 
+                                item_data['name'], 
+                                item_data['settings'],
+                                self.scene.track_height)
+                new_item.params = item_data['params'].copy()
+                new_item.color = item_data['color']
+                new_item.setBrush(item_data['color'])
+                
+                # Aggiungiamo un piccolo offset alla posizione
+                new_x = new_item.params['cAttacco'] * self.scene.pixels_per_beat * self.scene.zoom_level + 20
+                new_y = item_data['track_index'] * self.scene.track_height
+                new_item.setPos(new_x, new_y)
+                new_item.params['cAttacco'] = new_x / (self.scene.pixels_per_beat * self.scene.zoom_level)
+                
+                self.scene.addItem(new_item)
 
     def set_item_pos(self, item, new_pos):
         old_pos = item.pos()
@@ -620,17 +667,18 @@ class MainWindow(QMainWindow):
                 current_scroll = self.timeline_container.timeline_view.horizontalScrollBar().value()
                 self.timeline_container.ruler_view.horizontalScrollBar().setValue(current_scroll)
 
+            except yaml.YAMLError:
+                if test_mode:
+                    raise  # Ri-solleva l'eccezione durante i test
+                self.log_message(f"Errore nel parsing del file YAML")
+                return
+
             except FileNotFoundError:  # Aggiungiamo questo blocco per primo
                 if test_mode:
                     raise  # Ri-solleva l'eccezione durante i test
                 self.log_message(f"File non trovato: {file_path}")
                 return
 
-            except yaml.YAMLError:
-                if test_mode:
-                    raise  # Ri-solleva l'eccezione durante i test
-                self.log_message(f"Errore nel parsing del file YAML")
-                return
             except Exception as e:
                 if test_mode:
                     raise  # Ri-solleva altre eccezioni durante i test
@@ -661,15 +709,6 @@ class MainWindow(QMainWindow):
             self.save_to_yaml()
             self.update_window_title()
             
-    def increase_grid(self):
-        self.scene.grid_division *= 2
-        self.scene.draw_timeline()
-        
-    def decrease_grid(self):
-        if self.scene.grid_division > 1:
-            self.scene.grid_division //= 2
-            self.scene.draw_timeline()
-
     def update_undo_redo_actions(self):
         """Aggiorna lo stato dei pulsanti Undo/Redo"""
         if self.undo_action and self.redo_action:  # Verifica che esistano
@@ -759,3 +798,14 @@ class MainWindow(QMainWindow):
                 if hasattr(item, 'highlighted'):
                     item.highlighted = False
         self.scene.update()
+
+    def keyPressEvent(self, event):
+        """Gestisce gli eventi da tastiera a livello di finestra"""
+        if event.matches(QKeySequence.Copy):
+            self.copy_selected_items()
+            event.accept()
+        elif event.matches(QKeySequence.Paste):
+            self.paste_items()
+            event.accept()
+        else:
+            super().keyPressEvent(event)

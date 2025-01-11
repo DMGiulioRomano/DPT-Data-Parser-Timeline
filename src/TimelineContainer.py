@@ -457,6 +457,9 @@ class TimelineContainer(QWidget):
             self._track_header_view.verticalScrollBar().setValue(0)
             #print("Track header vertical scroll reset to 0")
 
+        if self._timeline_view and self._ruler_view:
+            current_scroll = self._timeline_view.horizontalScrollBar().value()
+            self._ruler_view.horizontalScrollBar().setValue(current_scroll)
         """# Verifica finale dello stato
         if self._timeline_view and self._ruler_view:
             print("\nFinal Scroll State:")
@@ -517,3 +520,20 @@ class TimelineContainer(QWidget):
         print(f"Vertical range: max={max_value}, page_step={page_step}")
         if hasattr(self, '_ruler_view'):
             print(f"Horizontal range: max={h_max}, page_step={h_page}")"""
+    
+        if hasattr(self, '_ruler_view'):
+            timeline_h_scroll = self._timeline_view.horizontalScrollBar()
+            ruler_h_scroll = self._ruler_view.horizontalScrollBar()
+
+            # Sincronizza i range
+            h_max = max(timeline_h_scroll.maximum(), ruler_h_scroll.maximum())
+            h_page = max(timeline_h_scroll.pageStep(), ruler_h_scroll.pageStep())
+            
+            timeline_h_scroll.setMaximum(h_max)
+            ruler_h_scroll.setMaximum(h_max)
+            timeline_h_scroll.setPageStep(h_page)
+            ruler_h_scroll.setPageStep(h_page)
+
+            # Connetti gli scroll
+            timeline_h_scroll.valueChanged.connect(ruler_h_scroll.setValue)
+            ruler_h_scroll.valueChanged.connect(timeline_h_scroll.setValue)
