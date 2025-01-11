@@ -30,7 +30,21 @@ class TimelineRulerView(QGraphicsView):
         print(f"Is Visible: {h_scroll.isVisible()}")
         print(f"Is Enabled: {h_scroll.isEnabled()}")
 
+    def debug_scroll_state(self, event_type=""):
+        """Debug helper per lo stato della scrollbar del ruler"""
+        print(f"\n=== TimelineRulerView Scroll State ({event_type}) ===")
+        h_scroll = self.horizontalScrollBar()
+        print(f"Value: {h_scroll.value()}")
+        print(f"Range: {h_scroll.minimum()} to {h_scroll.maximum()}")
+        print(f"Page Step: {h_scroll.pageStep()}")
+        if self.timeline_view:
+            timeline_scroll = self.timeline_view.horizontalScrollBar()
+            print("\nTimeline reference scrollbar state:")
+            print(f"Value: {timeline_scroll.value()}")
+            print(f"Range: {timeline_scroll.minimum()} to {timeline_scroll.maximum()}")
+
     def wheelEvent(self, event):
+        self.debug_scroll_state("Before Wheel Event")
         print("\n=== Debug TimelineRulerView Wheel Event ===")
         if self.timeline_view:
             print("Delegating wheel event to timeline view")
@@ -38,6 +52,7 @@ class TimelineRulerView(QGraphicsView):
         else:
             print("No timeline view to delegate to, handling locally")
             super().wheelEvent(event)
+        self.debug_scroll_state("After Wheel Event")
 
     def update_zoom(self, zoom_level):
         """Delega l'aggiornamento dello zoom alla scena"""
@@ -153,6 +168,34 @@ class TimelineContainer(QWidget):
             self._timeline_view.horizontalScrollBar().valueChanged.connect(safe_scroll_sync)
             print("Horizontal scrollbar connection established")     
 
+    def debug_view_state(self):
+        """Debug helper per lo stato completo delle viste"""
+        print("\n=== Complete View State Debug ===")
+        
+        # Timeline State
+        print("Timeline View:")
+        print(f"Scene Width: {self._timeline_view.scene().width()}")
+        print(f"Viewport Width: {self._timeline_view.viewport().width()}")
+        print(f"H-Scroll Value: {self._timeline_view.horizontalScrollBar().value()}")
+        print(f"V-Scroll Value: {self._timeline_view.verticalScrollBar().value()}")
+        
+        # Ruler State
+        print("\nRuler View:")
+        print(f"Scene Width: {self._ruler_view.scene().width()}")
+        print(f"Viewport Width: {self._ruler_view.viewport().width()}")
+        print(f"H-Scroll Value: {self._ruler_view.horizontalScrollBar().value()}")
+        
+        # Header State
+        print("\nHeader View:")
+        print(f"Width: {self._track_header_view.width()}")
+        print(f"V-Scroll Value: {self._track_header_view.verticalScrollBar().value()}")
+        
+        # Geometry
+        print("\nGeometry:")
+        print(f"Container Size: {self.size()}")
+        print(f"Timeline Rect: {self._timeline_view.geometry()}")
+        print(f"Ruler Rect: {self._ruler_view.geometry()}")
+
     def setup_ui(self):
         # Layout principale
         print("\n=== Setting up UI ===")
@@ -170,7 +213,7 @@ class TimelineContainer(QWidget):
             main_layout.addWidget(timeline_container)
             print("About to connect scrollbars")
             QTimer.singleShot(0, self.connect_scrollbars)
-            
+
     def _safe_update_ruler(self):
         """Metodo sicuro per aggiornare il ruler"""
         if not self._is_closing and self._ruler_view:
@@ -275,75 +318,6 @@ class TimelineContainer(QWidget):
         if self.track_header_view:
             self.track_header_view.current_width = pos
             self.track_header_view.update_tracks_width()
-
-    def setup_connections(self):
-        """Configura le connessioni tra i vari componenti"""
-        # Rimuovi le vecchie connessioni se esistono
-        if hasattr(self, '_timeline_scroll_connection'):
-            try:
-                self._timeline_view.verticalScrollBar().valueChanged.disconnect(
-                    self._timeline_scroll_connection)
-            except TypeError:
-                pass
-                
-        if hasattr(self, '_header_scroll_connection'):
-            try:
-                self._track_header_view.verticalScrollBar().valueChanged.disconnect(
-                    self._header_scroll_connection)
-            except TypeError:
-                pass
-
-        def on_timeline_scroll(value):
-            if self._track_header_view and not self._is_closing:
-                try:
-                    header_scroll = self._track_header_view.verticalScrollBar()
-                    header_scroll.setValue(value)
-                except Exception as e:
-                    print(f"Error in timeline scroll sync: {e}")
-
-        def on_header_scroll(value):
-            if self._timeline_view and not self._is_closing:
-                try:
-                    timeline_scroll = self._timeline_view.verticalScrollBar()
-                    timeline_scroll.setValue(value)
-                except Exception as e:
-                    print(f"Error in header scroll sync: {e}")
-
-        # Connetti i segnali
-        self._timeline_scroll_connection = on_timeline_scroll
-        self._header_scroll_connection = on_header_scroll
-        
-        self._timeline_view.verticalScrollBar().valueChanged.connect(on_timeline_scroll)
-        self._track_header_view.verticalScrollBar().valueChanged.connect(on_header_scroll)
-
-        def on_timeline_horizontal_scroll(value):
-            if self._ruler_view and not self._is_closing:
-                try:
-                    ruler_scroll = self._ruler_view.horizontalScrollBar()
-                    print(f"Current ruler scroll value: {ruler_scroll.value()}")
-                    print(f"Setting ruler scroll to: {value}")
-                    ruler_scroll.setValue(value)
-                    print(f"Ruler scroll after set: {ruler_scroll.value()}")
-                    print(f"Timeline horizontal scroll changed to: {value}")
-                    self._ruler_view.horizontalScrollBar().setValue(value)
-                    print(f"Ruler scroll value after update: {self._ruler_view.horizontalScrollBar().value()}")
-                except RuntimeError as e:
-                    print(f"Error in horizontal scroll sync: {e}")
-        
-        # Connetti lo scroll orizzontale
-        self._timeline_view.horizontalScrollBar().valueChanged.connect(on_timeline_horizontal_scroll)
-
-        # Sincronizza i range iniziali
-        def sync_ranges():
-            if self._timeline_view and self._track_header_view:
-                timeline_scroll = self._timeline_view.verticalScrollBar()
-                header_scroll = self._track_header_view.verticalScrollBar()
-                max_value = max(timeline_scroll.maximum(), header_scroll.maximum())
-                timeline_scroll.setMaximum(max_value)
-                header_scroll.setMaximum(max_value)
-
-        # Esegui la sincronizzazione dopo che l'interfaccia è stata renderizzata
-        QTimer.singleShot(0, sync_ranges)
 
     def handle_horizontal_scroll(self, value):
         print("\n=== Debug Horizontal Scroll Sync ===")
@@ -487,3 +461,56 @@ class TimelineContainer(QWidget):
             print(f"Ruler horizontal value: {self._ruler_view.horizontalScrollBar().value()}")
             if self._track_header_view:
                 print(f"Header vertical value: {self._track_header_view.verticalScrollBar().value()}")
+
+    def setup_connections(self):
+        """Configura le connessioni tra i vari componenti"""
+        # Verifica presenza delle view necessarie
+        if not hasattr(self, '_timeline_view') or not hasattr(self, '_track_header_view'):
+            print("Views non inizializzate, skip connessioni")
+            return
+
+        # 1. Configurazione scrollbar verticali
+        timeline_scroll = self._timeline_view.verticalScrollBar()
+        header_scroll = self._track_header_view.verticalScrollBar()
+
+        # Sincronizza i range
+        max_value = max(timeline_scroll.maximum(), header_scroll.maximum())
+        page_step = max(timeline_scroll.pageStep(), header_scroll.pageStep())
+        
+        timeline_scroll.setMaximum(max_value)
+        header_scroll.setMaximum(max_value)
+        timeline_scroll.setPageStep(page_step)
+        header_scroll.setPageStep(page_step)
+
+        # 2. Connessione bidirezionale delle scrollbar
+        # Da timeline a header
+        timeline_scroll.valueChanged.connect(header_scroll.setValue)
+        # Da header a timeline
+        header_scroll.valueChanged.connect(timeline_scroll.setValue)
+
+        # 3. Configurazione scrollbar orizzontali per ruler
+        if hasattr(self, '_ruler_view'):
+            timeline_h_scroll = self._timeline_view.horizontalScrollBar()
+            ruler_h_scroll = self._ruler_view.horizontalScrollBar()
+
+            # Sincronizza range orizzontali
+            h_max = max(timeline_h_scroll.maximum(), ruler_h_scroll.maximum())
+            h_page = max(timeline_h_scroll.pageStep(), ruler_h_scroll.pageStep())
+            
+            timeline_h_scroll.setMaximum(h_max)
+            ruler_h_scroll.setMaximum(h_max)
+            timeline_h_scroll.setPageStep(h_page)
+            ruler_h_scroll.setPageStep(h_page)
+
+            # Connessione bidirezionale orizzontale
+            timeline_h_scroll.valueChanged.connect(ruler_h_scroll.setValue)
+            ruler_h_scroll.valueChanged.connect(timeline_h_scroll.setValue)
+
+        # 4. Connessione track header view alla timeline
+        self._track_header_view.set_timeline_view(self._timeline_view)
+
+        # 5. Debug output
+        print(f"Connections setup complete")
+        print(f"Vertical range: max={max_value}, page_step={page_step}")
+        if hasattr(self, '_ruler_view'):
+            print(f"Horizontal range: max={h_max}, page_step={h_page}")

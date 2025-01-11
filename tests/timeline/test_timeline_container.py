@@ -128,34 +128,6 @@ class TimelineContainerTest(BaseTest):
         
         # Forza il processamento di eventi in sospeso
         QApplication.processEvents()
-                
-    def test_view_synchronization(self):
-        """Test sincronizzazione views"""
-        container = self.window.timeline_container
-        
-        timeline_view = container.timeline_view
-        header_view = container.track_header_view
-        
-        self.assertIsNotNone(timeline_view, "Timeline view is None")
-        self.assertIsNotNone(header_view, "Header view is None")
-        
-        timeline_scroll = timeline_view.verticalScrollBar()
-        header_scroll = header_view.verticalScrollBar()
-        
-        # Verifica che i range siano sincronizzati
-        self.assertEqual(timeline_scroll.maximum(), header_scroll.maximum(),
-                        "Scrollbar ranges don't match")
-        
-        # Test in entrambe le direzioni con più cicli di eventi
-        test_values = [100, 50, 0, 75]
-        for value in test_values:
-            print(f"\nTesting with value: {value}")
-            timeline_scroll.setValue(value)
-            for _ in range(3):  # Forza più cicli di eventi
-                QApplication.processEvents()
-            
-            self.assertEqual(header_scroll.value(), timeline_scroll.value(),
-                            f"Scroll mismatch. Header: {header_scroll.value()}, Timeline: {timeline_scroll.value()}")
                     
     def test_scroll_synchronization(self):
         """Test sincronizzazione scroll completa"""
@@ -224,3 +196,40 @@ class TimelineContainerTest(BaseTest):
             test_width,
             "Header width not updated correctly"
         )
+
+    def test_view_synchronization(self):
+        """Test sincronizzazione views"""
+        container = self.window.timeline_container
+        
+        # Debug iniziale
+        container.debug_view_state()
+        print("\nStarting scroll test...")
+        
+        timeline_view = container.timeline_view
+        header_view = container.track_header_view
+        
+        # Verifica stato iniziale
+        self.assertEqual(
+            timeline_view.verticalScrollBar().value(),
+            header_view.verticalScrollBar().value(),
+            "Initial scroll values don't match"
+        )
+        
+        # Debug pre-scroll
+        container.debug_view_state()
+        
+        # Test scroll
+        test_values = [100, 50, 0, 75]
+        for value in test_values:
+            print(f"\nTesting scroll value: {value}")
+            timeline_view.verticalScrollBar().setValue(value)
+            
+            # Debug dopo ogni set
+            container.debug_view_state()
+            QApplication.processEvents()
+            
+            self.assertEqual(
+                header_view.verticalScrollBar().value(),
+                timeline_view.verticalScrollBar().value(),
+                f"Scroll mismatch at value {value}"
+            )

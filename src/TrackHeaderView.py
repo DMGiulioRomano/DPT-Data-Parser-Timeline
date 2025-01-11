@@ -214,6 +214,18 @@ class TrackHeaderView(QGraphicsView):
         else:
             super().wheelEvent(event)
 
+    def sync_with_timeline(self, value):
+        """Sincronizza la posizione verticale con la timeline"""
+        if self.verticalScrollBar().value() != value:
+            self.verticalScrollBar().setValue(value)
+
+    def set_timeline_view(self, timeline_view):
+        """Imposta il riferimento alla timeline view e configura le connessioni"""
+        self.timeline_view = timeline_view
+        if timeline_view:
+            # Connetti il segnale della timeline alla sincronizzazione
+            timeline_view.verticalScrollBar().valueChanged.connect(self.sync_with_timeline)
+
 class TrackButton(QGraphicsRectItem):
     """Pulsante per mute/solo"""
     def __init__(self, text, parent=None):
