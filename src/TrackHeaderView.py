@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, pyqtSignal, QRectF, QTimer, QEvent, QPointF, QPoint
 from PyQt5.QtGui import QPen, QColor, QBrush, QFont, QPainter, QMouseEvent
 #from Timeline import MIN_SCENE_HEIGHT
 from src.Timeline import MIN_SCENE_HEIGHT
-from PyQt5.QtWidgets import QGraphicsSceneMouseEvent
+from PyQt5.QtWidgets import QGraphicsSceneMouseEvent, QSizePolicy
 class EditableTextItem(QGraphicsTextItem):
     """Testo editabile per l'header della traccia"""
     def __init__(self, text, parent=None):
@@ -127,14 +127,14 @@ class TrackHeaderView(QGraphicsView):
         self.setMaximumWidth(self._max_width)
         self.current_width = 200
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.setRenderHint(QPainter.Antialiasing)
         self.setContentsMargins(0, 0, 0, 0)
         self.setViewportMargins(0, 0, 0, 0)
         self.viewport().setContentsMargins(0, 0, 0, 0)
         self.scene.setSceneRect(0, 0, self.current_width, MIN_SCENE_HEIGHT)
-        
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)        
         # Aggiungiamo un metodo per forzare i limiti
         def enforceConstraints():
             if self.minimumWidth() != 150 or self.maximumWidth() != 600:
@@ -149,11 +149,21 @@ class TrackHeaderView(QGraphicsView):
         super().resizeEvent(event)
         current = event.size().width()
         
+        # Non usiamo setFixedWidth qui perché interferisce con lo splitter
         if current < self._min_width:
-            self.setFixedWidth(self._min_width)
+            new_width = self._min_width
         elif current > self._max_width:
-            self.setFixedWidth(self._max_width)
-
+            new_width = self._max_width
+        else:
+            new_width = current
+            
+        if new_width != current:
+            self.setMinimumWidth(new_width)
+            self.setMaximumWidth(new_width)
+        
+        self.current_width = new_width
+        self.update_tracks_width()
+        
     def keyPressEvent(self, event):
         """Gestisce gli eventi da tastiera per la TrackHeaderView"""
         if event.modifiers() & Qt.AltModifier and event.key() in [Qt.Key_Delete, Qt.Key_Backspace]:
@@ -172,8 +182,15 @@ class TrackHeaderView(QGraphicsView):
         super().keyPressEvent(event)
 
     def set_timeline_view(self, timeline_view):
-        """Imposta il riferimento alla timeline view"""
+        """Imposta il riferimento alla timeline view e configura le connessioni"""
         self.timeline_view = timeline_view
+        if timeline_view:
+            # Connetti il segnale della timeline alla sincronizzazione 
+            # e assicurati che la connessione sia bidirezionale
+            timeline_view.verticalScrollBar().valueChanged.connect(self.sync_with_timeline)
+            self.verticalScrollBar().valueChanged.connect(
+                lambda val: timeline_view.verticalScrollBar().setValue(val)
+            )
 
     def update_tracks_width(self):
         """Aggiorna la larghezza di tutti gli header delle tracce"""
@@ -217,11 +234,12 @@ class TrackHeaderView(QGraphicsView):
             return
         if self.timeline_view and self.timeline_view.verticalScrollBar().isVisible():
             # Blocca i segnali per evitare feedback loop
-            self.verticalScrollBar().blockSignals(True)
-            self.timeline_view.verticalScrollBar().setValue(
-                self.timeline_view.verticalScrollBar().value() - event.angleDelta().y()
-            )
-            self.verticalScrollBar().blockSignals(False)
+            delta_y = event.angleDelta().y()
+            new_value = self.timeline_view.verticalScrollBar().value() - delta_y
+            #self.verticalScrollBar().blockSignals(True)
+            self.timeline_view.verticalScrollBar().setValue(new_value)
+            #self.verticalScrollBar().blockSignals(False)
+            self.sync_with_timeline(new_value)
             event.accept()
         else:
             super().wheelEvent(event)

@@ -124,6 +124,7 @@ class TimelineRuler(QGraphicsScene):
     def update_zoom(self, new_zoom):
         """Aggiorna il livello di zoom e ridisegna il ruler"""
         self.zoom_level = new_zoom
+        self.setSceneRect(0, 0, self.main_timeline.sceneRect().width(), self.total_height)
         self.draw_ruler()
 
     def updateColors(self):

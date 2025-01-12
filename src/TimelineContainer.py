@@ -19,7 +19,18 @@ class TimelineRulerView(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setFixedHeight(70)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        
+
+        if timeline_view:
+            # Impostiamo stessa larghezza iniziale della timeline view
+            viewport_width = timeline_view.viewport().width()
+            self.setMinimumWidth(viewport_width)
+            
+            # Impostiamo la scena per occupare tutta la larghezza disponibile 
+            scene_width = max(timeline_view.scene().width(), viewport_width)
+            self.scene().setSceneRect(0, 0, scene_width, self.scene().sceneRect().height())
+            
+            # Connettiamo il segnale di resize della timeline view
+            #timeline_view.installEventFilter(self)        
         # Debug lo stato iniziale
         """print(f"Timeline view reference exists: {timeline_view is not None}")
         h_scroll = self.horizontalScrollBar()
@@ -251,20 +262,21 @@ class TimelineContainer(QWidget):
         self._ruler_view = TimelineRulerView(self._ruler_scene, self._timeline_view)
         #print(f"Ruler view created: {self._ruler_view is not None}")
         
-        """
+        self._ruler_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        
         # Forza stesso viewport width tra ruler e timeline
         if self._timeline_view:
-            viewport_width = self._timeline_view.viewport().width()
-            self._ruler_view.setViewportMargins(0, 0, 0, 0)
-            self._ruler_view.setFixedWidth(viewport_width)
-            self._ruler_view.viewport().setFixedWidth(viewport_width)
+            self._ruler_view.setMinimumWidth(self._timeline_view.viewport().width())
+            self._ruler_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             
-            # Aggiorna il range della scrollbar per riflettere il nuovo viewport
-            ruler_scrollbar = self._ruler_view.horizontalScrollBar()
-            timeline_scrollbar = self._timeline_view.horizontalScrollBar()
-            ruler_scrollbar.setRange(0, timeline_scrollbar.maximum())
-            ruler_scrollbar.setPageStep(timeline_scrollbar.pageStep())
-        """
+            # Sincronizza viewport
+            self._ruler_view.setViewportMargins(0, 0, 0, 0)
+            self._ruler_view.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            # Impostiamo una policy di sizing che permetta l'espansione orizzontale
+            
+            # Imposta la scena del ruler alla stessa larghezza della timeline
+            self._ruler_scene.setSceneRect(0, 0, self._scene.sceneRect().width(), self._ruler_scene.height())
+         
         ruler_layout.addWidget(self._ruler_view)
 
         # Forza l'aggiornamento dopo la creazione
@@ -287,37 +299,72 @@ class TimelineContainer(QWidget):
             timeline_scrollbar = self._timeline_view.horizontalScrollBar()
             ruler_scrollbar.setRange(0, timeline_scrollbar.maximum())
             ruler_scrollbar.setPageStep(timeline_scrollbar.pageStep())
-            
+                
     def create_timeline_section(self):
         timeline_container = QWidget()
         timeline_layout = QHBoxLayout(timeline_container)
         timeline_layout.setSpacing(0)
         timeline_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Crea splitter e aggiungi le view
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.setHandleWidth(self.splitter_handle_width)
+        # Crea splitter e configura le proprietà base
+        self.splitter = QSplitter(Qt.Horizontal)
+        self.splitter.setHandleWidth(self.splitter_handle_width)
+        self.splitter.setChildrenCollapsible(False)
         
-        # Imposta le policy prima di aggiungere al splitter
-        self._track_header_view.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        # Configura il TrackHeaderView con widget wrapper
+        header_wrapper = QWidget()
+        header_layout = QHBoxLayout(header_wrapper)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(0)
+        header_layout.addWidget(self._track_header_view)
         
-        # Aggiungi i widget
-        splitter.addWidget(self._track_header_view)
-        splitter.addWidget(self._timeline_view)
+        # Configura il TimelineView
+        self._timeline_view.setMinimumWidth(100)
         
-        # Imposta i fattori di stretch
-        splitter.setStretchFactor(0, 0)  # header view non si estende
-        splitter.setStretchFactor(1, 1)  # timeline view si estende
+        # Configura le policy di sizing
+        self._track_header_view.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self._timeline_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         
-        timeline_layout.addWidget(splitter)
+        # Aggiungi i widget al splitter
+        self.splitter.addWidget(header_wrapper)
+        self.splitter.addWidget(self._timeline_view)
+        
+        # Imposta le proporzioni dello splitter
+        self.splitter.setStretchFactor(0, 0)  # header non si espande
+        self.splitter.setStretchFactor(1, 1)  # timeline si espande
+        
+        # Imposta le dimensioni iniziali
+        self.splitter.setSizes([200, 800])
+        
+        # Connetti il segnale
+        self.splitter.splitterMoved.connect(self.on_splitter_moved)
+        
+        timeline_layout.addWidget(self.splitter)
         return timeline_container
 
     def on_splitter_moved(self, pos, index):
         """Gestisce il movimento dello splitter"""
-        self.header_spacer.setFixedWidth(pos)
-        if self.track_header_view:
-            self.track_header_view.current_width = pos
-            self.track_header_view.update_tracks_width()
+        # Applica i limiti
+        if pos < 150:
+            QTimer.singleShot(0, lambda: self.splitter.moveSplitter(150, index))
+            pos = 150
+        elif pos > 600:
+            QTimer.singleShot(0, lambda: self.splitter.moveSplitter(600, index))
+            pos = 600
+        
+        # Aggiorna header spacer
+        if hasattr(self, 'header_spacer'):
+            self.header_spacer.setFixedWidth(pos + self.splitter_handle_width)
+        
+        # Aggiorna track header
+        if self._track_header_view:
+            self._track_header_view.current_width = pos
+            self._track_header_view.update_tracks_width()
+        
+        # Forza aggiornamento delle viste
+        if self._ruler_view:
+            self._ruler_view.viewport().update()
+            
 
     def handle_horizontal_scroll(self, value):
         #print("\n=== Debug Horizontal Scroll Sync ===")
