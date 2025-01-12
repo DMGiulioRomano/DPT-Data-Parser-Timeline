@@ -6,22 +6,13 @@ from tests.timeline import (
     QKeyEvent, QEvent
 )
 from src.TimelineView import TimelineView
-from src.Timeline import TrackItem
+from src.Timeline import TrackItem, Timeline
+from src.Settings import Settings
 from PyQt5.QtGui import QMouseEvent
+from PyQt5.QtTest import QTest
 from PyQt5.QtCore import QPoint
 from src.MusicItem import MusicItem
-class TimelineViewTest(BaseTest):
-    def test_zoom_timeout(self):
-        """Test timeout dello zoom"""
-        view = self.window.timeline_container.timeline_view
-        
-        # Disabilita zoom
-        view.can_zoom = False
-        
-        # Verifica che dopo il timeout lo zoom sia riabilitato
-        QTimer.singleShot(150, lambda: self.assertTrue(view.can_zoom))
-            
-
+class TimelineViewTest(BaseTest):            
     def test_drag_mode(self):
         """Test modalità drag e selezione multipla"""
         view = self.window.timeline_container.timeline_view
@@ -65,16 +56,34 @@ class TimelineViewTest(BaseTest):
         self.assertEqual(view.dragMode(), view.NoDrag)
 
 
-    def test_zoom_timeout(self):
-        """Test timeout dello zoom"""
-        view = self.window.timeline_container.timeline_view
+    def test_zoom_timer(self):
+        """Test che il timer dello zoom funzioni correttamente"""
+        view = TimelineView(Timeline(Settings()))
         
-        # Disabilita zoom
+        # Assicuriamoci che can_zoom sia True all'inizio
+        print(f"can_zoom iniziale: {view.can_zoom}")
+        
+        # Simuliamo un evento di zoom che dovrebbe disattivare lo zoom
         view.can_zoom = False
+        print(f"can_zoom dopo disattivazione: {view.can_zoom}")
         
-        # Verifica che dopo il timeout lo zoom sia riabilitato
-        QTimer.singleShot(150, lambda: self.assertTrue(view.can_zoom))
-
+        # Avviamo il timer manualmente
+        view.zoom_timer.start()
+        print(f"Timer avviato, intervallo: {view.zoom_timer.interval()}ms")
+        
+        # Verifichiamo che il timer sia effettivamente partito
+        print(f"Timer attivo: {view.zoom_timer.isActive()}")
+        
+        # Aspettiamo che il timer finisca
+        QTest.qWait(view.zoom_timer.interval() + 100)  # Aspettiamo un po' più dell'intervallo del timer
+        
+        # Verifichiamo lo stato finale
+        print(f"can_zoom finale: {view.can_zoom}")
+        self.assertTrue(view.can_zoom, "Lo zoom dovrebbe essere stato riattivato dal timer")
+        
+        # Verifichiamo che il timer sia effettivamente scaduto
+        print(f"Timer ancora attivo: {view.zoom_timer.isActive()}")
+        
     def test_alt_zoom_shortcuts(self):
         """Test scorciatoie Alt+Up/Down per zoom"""
         view = self.window.timeline_container.timeline_view

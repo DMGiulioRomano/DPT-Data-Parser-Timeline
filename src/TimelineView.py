@@ -35,6 +35,7 @@ class TimelineView(QGraphicsView):
         self.zoom_timer = QTimer()
         self.zoom_timer.setSingleShot(True)
         self.zoom_timer.setInterval(100)
+        self.zoom_timer.timeout.connect(self.enable_zoom)  # Aggiungi questa connessione
         self.can_zoom = True
 
     def wheelEvent(self, event):
@@ -56,7 +57,10 @@ class TimelineView(QGraphicsView):
             super().wheelEvent(event)
 
     def enable_zoom(self):
+        """Riattiva la possibilità di zoomare"""
+        print("enable_zoom chiamato")  # debug
         self.can_zoom = True
+        print(f"can_zoom impostato a: {self.can_zoom}")  # debug
 
     def keyPressEvent(self, event):
         if event.modifiers() & Qt.AltModifier:
