@@ -7,4 +7,4 @@ test:
 	cd build && cmake --build .
 	cd build && ctest --output-on-failure
 clean:
-	./clean.sh
+	sudo rm -rf build

@@ -48,7 +48,9 @@ public:
     T getValue() const {
         return std::get<T>(m_value);
     }
-    
+
+    const ValueType& getVariant() const { return m_value; }
+
     std::string toString() const override;
     MetadataPtr clone() const override;
     bool validate() const override;

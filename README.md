@@ -21,12 +21,12 @@ Questo documento descrive il piano dettagliato per il refactoring dell'applicazi
 - [x] Implementazione ListValue per array
 - [x] Implementazione StringValue
 - [x] Unit test per ogni tipo di valore
-- [ ] Sistema di validazione base
+- [x] Sistema di validazione base
 
 #### Settimana 2: YAML Integration
-- [ ] Integrazione yaml-cpp
+- [x] Integrazione yaml-cpp
 - [ ] Implementazione parser YAML personalizzato
-- [ ] Serializzazione/Deserializzazione
+- [x] Serializzazione/Deserializzazione
 - [ ] Validazione schema YAML
 - [ ] Gestione errori e logging
 - [ ] Test di integrazione YAML
