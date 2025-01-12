@@ -1,121 +1,231 @@
-# DPT - Delta Parser Timeline
+# Piano di Implementazione DPT (Delta Personal Timeline)
 
 ## Overview
-DPT (Delta Parser Timeline) is a PyQt5-based desktop application for creating and managing musical timelines with parameterized behaviors. It provides an intuitive interface for arranging and manipulating clips with various musical parameters, designed specifically for composition and analysis.
+Questo documento descrive il piano dettagliato per il refactoring dell'applicazione DPT in C++/Qt, seguendo il pattern MVC.
 
-## Key Features
-- Multi-track timeline interface with intuitive drag-and-drop
-- Parameter-based clip manipulation with real-time updates
-- Intelligent grid system with adjustable zoom levels
-- Advanced parameter editing with support for numeric and list values
-- YAML export/import for timeline data
-- Integration with external make commands for processing
-- Customizable appearance with track and timeline colors
-- Comprehensive search functionality across clip parameters
+## Requisiti di Sistema
+- C++17/20
+- Qt 6.x
+- yaml-cpp
+- Google Test
+- CMake 3.15+
+- Compiler supportato (GCC 9+, Clang 10+, o MSVC 2019+)
 
-## System Requirements
-- Python 3.11
-- PyQt5
-- PyYAML
-- macOS 10.15 or later (for compiled application)
+## Fasi di Implementazione
 
-## Installation
+### Fase 1: Core Data Layer (2-3 settimane)
 
-### Running from Source
-1. Clone the repository
-2. Install dependencies:
-```bash
-pip install PyQt5 PyYAML
+#### Settimana 1: Strutture Dati Base
+- [x] Implementazione classe base MetadataValue
+- [x] Implementazione NumericValue per int/float
+- [x] Implementazione ListValue per array
+- [x] Implementazione StringValue
+- [x] Unit test per ogni tipo di valore
+- [ ] Sistema di validazione base
+
+#### Settimana 2: YAML Integration
+- [ ] Integrazione yaml-cpp
+- [ ] Implementazione parser YAML personalizzato
+- [ ] Serializzazione/Deserializzazione
+- [ ] Validazione schema YAML
+- [ ] Gestione errori e logging
+- [ ] Test di integrazione YAML
+
+#### Settimana 3: Testing & Ottimizzazione
+- [ ] Completamento test suite
+- [ ] Ottimizzazione performance
+- [ ] Documentazione API
+- [ ] Code review
+- [ ] Benchmark
+
+### Fase 2: Model Layer (2 settimane)
+
+#### Settimana 1: Modelli Base
+- [ ] Implementazione TimelineModel
+- [ ] Implementazione TrackModel
+- [ ] Implementazione ClipModel
+- [ ] Sistema eventi/observer
+- [ ] Unit test modelli
+
+#### Settimana 2: Business Logic
+- [ ] Validazione regole di business
+- [ ] Gestione relazioni tra modelli
+- [ ] Sistema di notifiche
+- [ ] Test di integrazione
+- [ ] Documentazione modelli
+
+### Fase 3: View Layer (3-4 settimane)
+
+#### Settimana 1: UI Base
+- [ ] Setup progetto Qt
+- [ ] MainWindow base
+- [ ] Layout principali
+- [ ] Menu e toolbar
+- [ ] Test widget base
+
+#### Settimana 2: Timeline View
+- [ ] Implementazione TimelineView
+- [ ] Sistema di rendering timeline
+- [ ] Visualizzazione tracce
+- [ ] Visualizzazione clip
+- [ ] Test rendering
+
+#### Settimana 3: Interazione
+- [ ] Gestione mouse events
+- [ ] Drag & drop base
+- [ ] Selezione items
+- [ ] Zoom base
+- [ ] Test interazioni
+
+#### Settimana 4: UI Avanzata
+- [ ] Dialog editor metadata
+- [ ] Properties panel
+- [ ] Contestual menus
+- [ ] Shortcuts
+- [ ] Test UI avanzata
+
+### Fase 4: Controller & Integration (2-3 settimane)
+
+#### Settimana 1: Controller Base
+- [ ] Implementazione TimelineController
+- [ ] Implementazione TrackController
+- [ ] Implementazione ClipController
+- [ ] Test controller base
+
+#### Settimana 2: Integration
+- [ ] Collegamento Model-View-Controller
+- [ ] Gestione stati applicazione
+- [ ] Gestione configurazione
+- [ ] Test integrazione
+- [ ] Performance testing
+
+#### Settimana 3: Refinement
+- [ ] Ottimizzazione generale
+- [ ] Gestione memoria
+- [ ] Profiling
+- [ ] Bugfix
+- [ ] Test end-to-end
+
+### Fase 5: Funzionalità Avanzate (2+ settimane)
+
+#### Settimana 1: Features Avanzate
+- [ ] Sistema Undo/Redo
+- [ ] Command pattern
+- [ ] Gestione storia
+- [ ] Test features avanzate
+
+#### Settimana 2: Polish
+- [ ] UI polish
+- [ ] UX improvements
+- [ ] Documentazione utente
+- [ ] Documentazione sviluppatore
+- [ ] Release preparation
+
+## Note Tecniche
+
+### Struttura Progetto
 ```
-3. Run the application:
-```bash
-cd src && python3.11 main.py
+dpt/
+├── src/
+│   ├── core/           # Core data structures
+│   ├── model/          # MVC Models
+│   ├── view/           # Qt Views
+│   ├── controller/     # Controllers
+│   └── utils/          # Utilities
+├── include/            # Public headers
+├── test/              # Test files
+├── docs/              # Documentation
+└── CMakeLists.txt     # Build system
 ```
 
-### Running the Compiled Application (macOS)
-1. Download the latest release
-2. Move DPT.app to your Applications folder
-3. Launch DPT from Applications
+### Convenzioni Codice
+- Naming: PascalCase per classi, camelCase per metodi/variabili
+- Prefissi: m_ per membri privati
+- Documenti: Doxygen style
+- Testing: Naming TestSuite_TestCase
+- Commenti: In inglese
 
-## Quick Start Guide
+### Build System
+```cmake
+# Requisiti minimi
+cmake_minimum_required(VERSION 3.15)
+project(DPT VERSION 1.0)
 
-### Basic Controls
-- **Add Clip**: Click "Add Item" or press Ctrl/Cmd + T
-- **Select Clips**: Click or drag selection rectangle (with Ctrl/Cmd)
-- **Move Clips**: Drag or use arrow keys with Ctrl/Cmd
-- **Edit Parameters**: Double-click clip or press Ctrl/Cmd + Return
-- **Zoom**: Use Ctrl/Cmd +/- or pinch gesture
-- **Save/Load**: Use File menu or Ctrl/Cmd + S/O
+# C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-### Timeline Navigation
-- Pan: Alt + Arrow keys
-- Track Navigation: Ctrl/Cmd + Up/Down arrows
-- Quick Zoom: Alt + Up/Down arrows
-
-### Clip Parameters
-Each clip contains musical parameters:
-- cAttacco: Starting time
-- durataArmonica: Harmonic duration
-- ritmo: Rhythm values (list)
-- durata: Duration
-- ampiezza: Amplitude (single value or range)
-- frequenza: Frequency parameters (list)
-- posizione: Position parameter
-
-## File Management
-
-### YAML Structure
-Timeline data is stored in YAML format with standardized parameter structure:
-```yaml
-comportamenti:
-  - cAttacco: 0.0
-    durataArmonica: 35.0
-    ritmo: [3.0]
-    durata: 10.0
-    ampiezza: -14.0
-    frequenza: [2.0, 5.0]
-    posizione: [-2.0, GEN06]
+# Dipendenze
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
+find_package(yaml-cpp REQUIRED)
 ```
 
-### Settings
-Application settings are stored in settings.json and include:
-- Directory preferences
-- Visual customization options
-- Default timeline configuration
+## Testing Strategy
 
-## Keyboard Shortcuts
+### Unit Testing
+- Test isolati per componenti
+- Mock objects per dipendenze
+- Coverage > 80%
 
-### File Operations
-- New Timeline: Ctrl/Cmd + N
-- Open: Ctrl/Cmd + O
-- Save: Ctrl/Cmd + S
-- Save As: Ctrl/Cmd + Shift + S
+### Integration Testing
+- Test interazione componenti
+- Test file I/O
+- Test performance
 
-### Edit Operations
-- Add Clip: Ctrl/Cmd + T
-- Delete Selection: Delete/Backspace
-- Duplicate Clips: Ctrl/Cmd + D
-- Rename Clip: Return
-- Show Parameters: Ctrl/Cmd + Return
+### UI Testing
+- Test widget rendering
+- Test user interaction
+- Test eventi UI
 
-### View Controls
-- Zoom In: Ctrl/Cmd + Plus
-- Zoom Out: Ctrl/Cmd + Minus
-- Increase Width: Ctrl/Cmd + Shift + Right
-- Decrease Width: Ctrl/Cmd + Shift + Left
+## Deployment
 
-## Make Integration
-The application integrates with external make commands through a configurable make directory setting. Timeline data can be processed using:
-```bash
-make SEZIONE=<yaml_filename>
-```
+### Build Artifacts
+- Eseguibile principale
+- File di configurazione
+- Documentazione
+- Test suite
 
-## Support and Documentation
-For detailed documentation, see the [/docs](/docs) directory.
+### Platform Support
+- Linux (primary)
+- macOS
+- Windows (via MSVC)
 
-## License
-MIT License
+## Timeline
+- Sprint planning settimanale
+- Review bisettimanale
+- Milestone mensile
+- Totale: 11-14 settimane
 
----
+## Rischi e Mitigazioni
 
-For technical documentation and development details, please refer to [/docs/README.md](/docs/README.md)
+### Rischi Tecnici
+- Problemi performance Qt: Profiling precoce
+- Memory leaks: RAII e smart pointers
+- Thread safety: Design thread-safe da inizio
+
+### Rischi Progetto
+- Scope creep: Definizione chiara requisiti
+- Timeline slip: Buffer 20% per fase
+- Tech debt: Code review regolari
+
+## Note di Manutenzione
+
+### Documentazione
+- API docs (Doxygen)
+- Design docs (Markdown)
+- User manual (PDF/HTML)
+
+### Version Control
+- Git flow
+- Feature branches
+- Pull request review
+- Semantic versioning
+
+### CI/CD
+- Build automatici
+- Test suite
+- Static analysis
+- Code coverage
+
+## Conclusioni
+Il piano è iterativo e può essere adattato in base al feedback e alle necessità che emergono durante lo sviluppo.

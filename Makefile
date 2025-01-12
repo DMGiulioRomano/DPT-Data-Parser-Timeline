@@ -1,4 +1,10 @@
-.PHONY: run
+.PHONY: test clean
 
-run:
-    python -m src.main
+
+test:
+	mkdir -p build
+	cd build && cmake ..
+	cd build && cmake --build .
+	cd build && ctest --output-on-failure
+clean:
+	./clean.sh

@@ -1,8 +1,0 @@
-comportamenti:
-  - cAttacco: 0
-    durataArmonica: 26
-    ritmo: [7,15]
-    durata: 5.0
-    ampiezza: [-30,-0.25]
-    frequenza: [6,1]
-    posizione: -8
