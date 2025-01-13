@@ -11,11 +11,21 @@ std::string NumericValue::toString() const {
     return oss.str();
 }
 
+/**
+ * @note Uses std::visit to handle both int and double values while
+ * maintaining type safety and avoiding unnecessary conversions
+ */
+
 MetadataPtr NumericValue::clone() const {
     return std::visit([](auto&& value) -> MetadataPtr {
         return std::make_shared<NumericValue>(value);
     }, m_value);
 }
+
+/**
+ * @note For floating point values, checks for NaN/Inf.
+ * Integer values are always considered valid.
+ */
 
 bool NumericValue::validate() const {
     return std::visit([](auto&& value) -> bool {
@@ -41,6 +51,10 @@ std::string ListValue::toString() const {
     return oss.str();
 }
 
+/**
+ * @note Performs deep copy of all contained values to maintain
+ * value semantics and avoid shared state
+ */
 MetadataPtr ListValue::clone() const {
     ValueType newValues;
     newValues.reserve(m_values.size());
@@ -50,6 +64,10 @@ MetadataPtr ListValue::clone() const {
     return std::make_shared<ListValue>(newValues);
 }
 
+/**
+ * @note A list is valid only if all its elements are valid
+ * and no null pointers are present
+ */
 bool ListValue::validate() const {
     return std::all_of(m_values.begin(), m_values.end(),
         [](const auto& value) { return value && value->validate(); });

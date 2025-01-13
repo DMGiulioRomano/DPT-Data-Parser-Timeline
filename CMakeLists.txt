@@ -37,3 +37,7 @@ add_test(MetadataValueTests MetadataValueTests)
 add_executable(YamlSerializationTests test/YamlSerializationTests.cpp)
 target_link_libraries(YamlSerializationTests MetadataValue yaml-cpp GTest::gtest_main)
 add_test(YamlSerializationTests YamlSerializationTests)
+
+add_executable(YamlParserTests test/YamlParserTests.cpp)
+target_link_libraries(YamlParserTests MetadataValue yaml-cpp GTest::gtest_main)
+add_test(YamlParserTests YamlParserTests)

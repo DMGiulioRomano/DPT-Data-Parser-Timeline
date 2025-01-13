@@ -3,6 +3,11 @@
 
 namespace dpt::core {
 
+/**
+ * @note Type detection is done through dynamic_pointer_cast to maintain
+ * type safety. Each type has its own serialization logic to ensure
+ * proper YAML representation.
+ */
 YAML::Node serialize(const MetadataPtr& value) {
     if (!value) {
         throw std::runtime_error("Cannot serialize null pointer");
@@ -26,6 +31,11 @@ YAML::Node serialize(const MetadataPtr& value) {
     throw std::runtime_error("Unsupported MetadataValue type");
 }
 
+/**
+ * @note Deserialization attempts conversions in order of specificity:
+ * int -> double -> string for scalar values. Sequences are recursively
+ * processed.
+ */
 MetadataPtr deserialize(const YAML::Node& node) {
     if (!node.IsDefined()) {
         throw std::runtime_error("Cannot deserialize undefined node");
